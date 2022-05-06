@@ -10,6 +10,7 @@
 #include "dl/string"
 #include "dl/variant"
 #include "dl/nytl.hpp"
+#include "dl/felspar.hpp"
 #include "optional.hpp"
 #include "expected.hpp"
 

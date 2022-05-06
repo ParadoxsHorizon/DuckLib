@@ -16,3 +16,6 @@
 [submodule "thirdparty/nytl"]
 	path = thirdparty/nytl
 	url = https://github.com/nyorain/nytl.git
+[submodule "thirdparty/coro"]
+	path = thirdparty/coro
+	url = https://github.com/Felspar/coro.git

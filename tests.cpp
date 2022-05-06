@@ -618,19 +618,17 @@ TEST_CASE( "Observable Pointers" ) {
 // 	}
 // }
 
-// #include <coroutine>
+TEST_CASE( "Generator" ) {
 
-// TEST_CASE( "Generator" ) {
+	auto iota = [](int start = 0, int end = -1) -> std::generator<int> {
+		for( ; start < end || end < start; start++)
+			co_yield start;
+	};
 
-// 	auto iota = [](int start = 0, int end = -1) -> std::coroutine::generator<int> {
-// 		for( ; start < end || end < start; start++)
-// 			co_yield start;
-// 	};
-
-// 	int last = 0;
-// 	for(int x: iota(0, 10))
-// 		CHECK(x == last++);
-// }
+	int last = 0;
+	for(int x: iota(0, 10))
+		CHECK(x == last++);
+}
 
 // TEST_CASE( "Variant" ) {
 // 	using variant = dl::variant<int, string, float>;
