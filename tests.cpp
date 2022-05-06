@@ -618,84 +618,6 @@ TEST_CASE( "Observable Pointers" ) {
 // 	}
 // }
 
-// #include <concurrent_queue>
-
-// TEST_CASE( "Concurrent Queue" ) {
-// 	std::concurrent_queue<int> q;
-// 	int dequeued[100] = { 0 };
-// 	std::thread threads[20];
-
-// 	// Producers
-// 	for (int i = 0; i != 10; ++i)
-// 		threads[i] = std::thread([&](int i) {
-// 			decltype(q)::producer_token t(q);
-// 			for (int j = 0; j != 10; ++j)
-// 				q.enqueue(t, i * 10 + j);
-// 		}, i);
-
-// 	// Consumers
-// 	for (int i = 10; i != 20; ++i)
-// 		threads[i] = std::thread([&]() {
-// 			decltype(q)::consumer_token t(q);
-// 			for (int j = 0; j != 20; ++j)
-// 				if (auto item = q.try_dequeue(t); item)
-// 					++dequeued[*item];
-// 		});
-
-// 	// Wait for all threads
-// 	for (int i = 0; i != 20; ++i)
-// 		threads[i].join();
-
-// 	// Collect any leftovers (could be some if e.g. consumers finish before producers)
-// 	int item;
-// 	while (q.try_dequeue(item))
-// 		++dequeued[item];
-
-// 	// Make sure everything went in and came back out!
-// 	for (int i = 0; i != 100; ++i)
-// 		CHECK(dequeued[i] == 1);
-// }
-
-// TEST_CASE( "Concurrent Queue Bulk Operations" ) {
-// 	std::concurrent_queue<int> q;
-// 	int dequeued[100] = { 0 };
-// 	std::thread threads[20];
-
-// 	// Producers
-// 	for (int i = 0; i != 10; ++i)
-// 		threads[i] = std::thread([&](int i) {
-// 			decltype(q)::producer_token t(q);
-// 			int items[10];
-// 			for (int j = 0; j != 10; ++j)
-// 				items[j] = i * 10 + j;
-// 			q.enqueue_bulk(t, items, 10);
-// 		}, i);
-
-// 	// Consumers
-// 	for (int i = 10; i != 20; ++i)
-// 		threads[i] = std::thread([&]() {
-// 			decltype(q)::consumer_token t(q);
-// 			int items[20];
-// 			for (std::size_t count = q.try_dequeue_bulk(t, items, 20); count != 0; --count)
-// 				++dequeued[items[count - 1]];
-// 		});
-
-// 	// Wait for all threads
-// 	for (int i = 0; i != 20; ++i)
-// 		threads[i].join();
-
-// 	// Collect any leftovers (could be some if e.g. consumers finish before producers)
-// 	int items[10];
-// 	std::size_t count;
-// 	while ((count = q.try_dequeue_bulk(items, 10)) != 0)
-// 		for (std::size_t i = 0; i != count; ++i)
-// 			++dequeued[items[i]];
-
-// 	// Make sure everything went in and came back out!
-// 	for (int i = 0; i != 100; ++i)
-// 		CHECK(dequeued[i] == 1);
-// }
-
 // #include <coroutine>
 
 // TEST_CASE( "Generator" ) {
@@ -934,6 +856,11 @@ TEST_CASE( "Delegate" ) {
 TEST_CASE( "Math" ) {
 	CHECK(std::lerp(0., 5, .5) == 2.5);
 	CHECK(std::smoothstep(0., 5., .5) == std::approx(0.028));
+
+	CHECK(std::wrap(0.0, 360., 719.99) == 359.99);
+	CHECK(std::wrap(0.0, 360., 720.1) == std::approx(.1));
+	CHECK(std::wrap(0, 360, 720) == 0);
+	CHECK(std::wrap(10, 15, 21) == 11);
 
 	CHECK(std::map_unsigned(50) == 100);
 	CHECK(std::map_unsigned(-50) == 99);
