@@ -1,0 +1,93 @@
+#ifndef ___DUCKED_C_BINARY_HPP___
+#define ___DUCKED_C_BINARY_HPP___
+
+#include "dl/string"
+#include <span>
+
+namespace std {
+
+	namespace detail {
+		template<typename T>
+		concept has_as_bytes_function = requires(T a) {
+			a.as_bytes();
+		};
+
+		template<typename T>
+		concept has_as_writable_bytes_function = requires(T a) {
+			a.as_writable_bytes();
+		};
+
+		template<typename T>
+		concept has_from_bytes_function = requires(const std::span<std::byte> b) {
+			T::from_bytes(b);
+		};
+	} // detail
+
+	template<typename T> requires detail::has_as_bytes_function<T> inline auto as_bytes(const T& data) { return data.as_bytes(); }
+	template<typename T> requires (!detail::has_as_bytes_function<T>)
+	inline auto as_bytes(const T& data) {
+		const T* ptr = &data;
+		return as_bytes(std::span{ptr, 1});
+	}
+	template<typename T> requires detail::has_as_writable_bytes_function<T> inline auto as_writable_bytes(const T& data) { return data.as_writable_bytes(); }
+	template<typename T> requires (!detail::has_as_writable_bytes_function<T>)
+	inline auto as_writable_bytes(T& data) {
+		T* ptr = &data;
+		return as_writable_bytes(std::span{ptr, 1});
+	}
+	template<typename T> inline auto as_writable_bytes(T&& data) = delete; // Getting writable bytes from a temporary is invalid!
+	template<typename T> inline T& from_bytes_view(std::span<std::byte> bytes) noexcept { return *((T*) bytes.data()); }
+	template<typename T> inline const T& from_bytes_view(const std::span<std::byte> bytes) noexcept { return *((const T*) bytes.data()); }
+	template<typename T> requires detail::has_from_bytes_function<T> inline auto from_bytes(const std::span<std::byte>& bytes) { return T::from_bytes(bytes); }
+	template<typename T> requires (!detail::has_from_bytes_function<T>) inline T from_bytes(const std::span<std::byte>& bytes) noexcept { return *((const T*) bytes.data()); }
+
+
+	template<typename T>
+	struct binary {
+	protected: 
+		T& data;
+		// Variable tracking the endianess of the binary data (used to preform a proper conversion on read)
+		std::endian endian = std::endian::native;
+
+	public:
+		constexpr binary(T& data): data(data) {}
+		constexpr operator T&() { return data; }
+
+		constexpr inline auto as_bytes() { return std::as_bytes(data); }
+		constexpr inline T& from_bytes(const std::span<std::byte>& bytes) { return data = std::from_bytes<T>(bytes); }
+
+		constexpr binary& convert_endian(std::endian target, std::endian source = std::endian::native) {
+			endian = target;
+
+			auto bytes = as_bytes();
+			bytes = std::convert_endian(bytes, target, source);
+
+			if constexpr (detail::has_from_bytes_function<T> == true)
+				from_bytes(*((std::span<std::byte>*) &bytes));
+
+			return *this;
+		}
+		constexpr inline binary& convert_little_endian() { return convert_endian(std::endian::little); } 
+		constexpr inline binary& convert_big_endian() { return convert_endian(std::endian::big); } 
+
+
+		// Specific input/output override for binary data
+		friend inline std::ostream& operator << (std::ostream& s, binary binary) {
+			auto bytes = binary.as_bytes();
+			dl::string::view{(char*) bytes.data(), bytes.size()}.pascal_string(s);
+			return s;
+		}
+		friend inline std::istream& operator >> (std::istream& s, binary binary) { // Assumes that bytes has already been allocated to the proper size
+			auto _tmp = dl::string::pascal_string(s);
+			std::span<std::byte> tmp((std::byte*) _tmp.data(), _tmp.size());
+			if(binary.endian != std::endian::native)
+				tmp = std::convert_endian(tmp, binary.endian);
+
+			binary.from_bytes(tmp);
+			return s;
+		}
+	};
+
+} // std
+
+#endif // ___DUCKED_C_BINARY_HPP___

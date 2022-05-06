@@ -1,0 +1,21 @@
+#ifndef ___DUCKED_C_BACKWARD_INC_HPP___
+#define ___DUCKED_C_BACKWARD_INC_HPP___
+#define BACKWARD_HAS_DW 1
+#define BACKWARD_HAS_LIBUNWIND 1
+#include "backward.hpp" // Include backward
+#include "boost/predef.h"
+#include <sstream>
+
+namespace std {
+	inline namespace trace { using namespace backward; }
+
+// Function which generates a string containing a stack trace on demand
+#if OS_WINDOWS // Windows
+	std::string stacktrace(std::trace::Printer p = {}, std::trace::StackTrace st = {});
+#else
+	std::string stacktrace(std::trace::Printer p = { true, std::trace::ColorMode::always }, std::trace::StackTrace st = {});
+#endif
+
+}
+
+#endif // ___DUCKED_C_BACKWARD_INC_HPP___

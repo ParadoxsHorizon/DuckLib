@@ -1,0 +1,18 @@
+[submodule "thirdparty/doctest"]
+	path = thirdparty/doctest
+	url = https://github.com/doctest/doctest.git
+[submodule "thirdparty/nanobench"]
+	path = thirdparty/nanobench
+	url = https://github.com/martinus/nanobench.git
+[submodule "thirdparty/utfcpp"]
+	path = thirdparty/utfcpp
+	url = https://github.com/nemtrif/utfcpp.git
+[submodule "thirdparty/NamedType"]
+	path = thirdparty/NamedType
+	url = https://github.com/joboccara/NamedType.git
+[submodule "thirdparty/mdspan"]
+	path = thirdparty/mdspan
+	url = https://github.com/kokkos/mdspan.git
+[submodule "thirdparty/nytl"]
+	path = thirdparty/nytl
+	url = https://github.com/nyorain/nytl.git

@@ -1,0 +1,8 @@
+#ifndef ___DUCKED_C_DYNAMIC_BITSET_HPP___
+#define ___DUCKED_C_DYNAMIC_BITSET_HPP___
+
+#include <dynamic_bitset.h>
+
+namespace std { using namespace sul; }
+
+#endif // ___DUCKED_C_DYNAMIC_BITSET_HPP___

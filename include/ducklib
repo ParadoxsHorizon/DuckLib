@@ -1,0 +1,201 @@
+#ifndef ___DUCKED_C_HPP___
+#define ___DUCKED_C_HPP___
+
+#include <boost/predef.h>
+#include "Demangle.h"
+#include "number"
+#include "pointer"
+#include "dl/array"
+#include "dl/concepts"
+#include "dl/string"
+#include "dl/variant"
+#include "optional.hpp"
+#include "expected.hpp"
+
+namespace dl::builtin {
+	// String is now a "builtin" type
+	typedef dl::string string;
+	typedef dl::basic_string<unsigned char> ustring;
+	// Arrays are "builtin" types
+	template<typename T, size_t size> struct array: public dl::array<T, size> { using dl::array<T, size>::array; };
+	template<class T, class Allocator = std::allocator<T>> struct dynarray: std::dynamic_array<T, Allocator> { using std::dynamic_array<T, Allocator>::dynamic_array; };
+	
+	// template<typename T> using optional = tl::optional<T>;
+	// template<typename T, typename Error> using expected = tl::expected<T, Error>;
+	template<typename... Ts> using variant = dl::variant<Ts...>;
+	using any = dl::any;
+	// optional is "builtin" types
+	using namespace tl;
+
+
+	// Byte is now a "builtin" type
+	typedef std::byte byte;
+	// Allow bytes to be input and output
+	inline std::ostream& operator << (std::ostream& s, const byte b) {
+		auto f = s.flags();
+		s << std::showbase << std::hex << (int) b;
+		s.flags(f);
+		return s;
+	}
+	inline std::istream& operator >> (std::istream& s, byte& b) {
+		uint8_t tmp;
+		auto f = s.flags();
+		s >> std::showbase >> std::hex >> tmp;
+		b = byte {tmp};
+		s.flags(f);
+		return s;
+	}
+}
+
+namespace dl::literals {
+	// Import literals from std::chrono
+	using namespace std::literals::chrono_literals;
+	// using namespace std::literals::complex_literals;
+}
+
+
+// Defer (https://stackoverflow.com/questions/32432450/what-is-standard-defer-finalizer-implementation-in-c)
+#include <nytl/scope.hpp>
+namespace std {
+	template<invocable F, bool OnSuccess = true, bool OnException = true> using scope_guard = nytl::ScopeGuard<F, OnSuccess, OnException>;
+	template<invocable F> using success_guard = nytl::SuccessGuard<F>;
+	template<invocable F> using except_guard = nytl::ExceptionGuard<F>;
+} // Drag nytl::scope_guard into the std namespace
+#ifndef defer
+struct ___ducked_c_defer_dummy___ {};
+template <std::invocable F> std::scope_guard<F> operator<<(___ducked_c_defer_dummy___, F f) { return {std::move(f)}; }
+#define DEFER_(LINE) zz_defer##LINE
+#define DEFER(LINE) DEFER_(LINE)
+#define defer auto DEFER(__LINE__) = ___ducked_c_defer_dummy___{} << [&]()
+#endif // defer
+
+
+// Macro which converts a c++ container to a c ptr/size pair
+#define cstyle(x) dl::builtin::data_ptr(x), dl::builtin::len(x)
+#define cstyler(x) dl::builtin::len(x), dl::builtin::data_ptr(x) // Reversed version
+#define cstyleR(x) dl::builtin::len(x), dl::builtin::data_ptr(x) // Reversed version
+#define cstyle_r(x) dl::builtin::len(x), dl::builtin::data_ptr(x) // Reversed version
+
+namespace dl::builtin {
+	// data built in function
+	constexpr inline const char* data_ptr(const char* s) noexcept { return s; }
+	inline const char* data_ptr(std::string& s) noexcept { return s.c_str(); }
+	inline const char* data_ptr(std::string&& s) noexcept { return s.c_str(); }
+	inline const char* data_ptr(const std::string& s) noexcept { return s.c_str(); }
+	inline const char* data_ptr(const std::string&& s) noexcept { return s.c_str(); }
+	inline const char* data_ptr(dl::string& s) noexcept { return s.c_str(); }
+	inline const char* data_ptr(dl::string&& s) noexcept { return s.c_str(); }
+	inline const char* data_ptr(const dl::string& s) noexcept { return s.c_str(); }
+	inline const char* data_ptr(const dl::string&& s) noexcept { return s.c_str(); }
+	template <typename T> constexpr inline const T* data_ptr(const T& a) noexcept { return a.data(); }
+	template <typename T> constexpr inline const T* data_ptr(const T&& a) noexcept { return a.data(); }
+
+	// len built in function
+	inline size_t len(const char* s) { return strlen(s); }
+	template <typename T, size_t N> constexpr inline size_t len(const std::array<T, N>& a) noexcept { return N; }
+	template <typename T, size_t N> constexpr inline size_t len(const std::array<T, N>&& a) noexcept { return N; }
+	template <typename T> constexpr inline size_t len(const T& s) noexcept { return s.size(); }
+	template <typename T> constexpr inline size_t len(const T&& s) noexcept { return s.size(); }
+
+	// Output operator for linear containers
+	template<typename... T> inline std::ostream& operator << (std::ostream& s, const std::tuple<T...>& t); // Tuple prototype
+	template<typename... T> inline std::ostream& operator << (std::ostream& s, const std::tuple<T...>&& t); // Tuple prototype
+	template<typename T, size_t N> inline std::ostream& operator << (std::ostream& s, const std::array<T, N>& a) { if(a.empty()) return s << "[]"; s << "["; for (const T& cur: a) s << cur << ", "; return s << "\b\b]"; }
+	template<typename T, size_t N> inline std::ostream& operator << (std::ostream& s, const std::array<T, N>&& a) { if(a.empty()) return s << "[]"; s << "["; for (const T& cur: a) s << cur << ", "; return s << "\b\b]"; }
+	// TODO: Multiarray
+	template<typename T, size_t N> inline std::ostream& operator << (std::ostream& s, const std::span<T, N>& a) { if(a.empty()) return s << "[]"; s << "["; for (const T& cur: a) s << cur << ", "; return s << "\b\b]"; }
+	template<typename T, size_t N> inline std::ostream& operator << (std::ostream& s, const std::span<T, N>&& a) { if(a.empty()) return s << "[]"; s << "["; for (const T& cur: a) s << cur << ", "; return s << "\b\b]"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const std::vector<T>& a) { if(a.empty()) return s << "[]"; s << "["; for (const T& cur: a) s << cur << ", "; return s << "\b\b]"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const std::vector<T>&& a) { if(a.empty()) return s << "[]"; s << "["; for (const T& cur: a) s << cur << ", "; return s << "\b\b]"; }
+	template<typename... T> inline std::ostream& operator << (std::ostream& s, const std::tuple<T...>& t) { s << "("; std::apply([&](auto& ...x) {(..., [&]{ operator<<(s, x) << ", "; }());}, t); return s << "\b\b)"; }
+	template<typename... T> inline std::ostream& operator << (std::ostream& s, const std::tuple<T...>&& t) { s << "("; std::apply([&](auto& ...x) {(..., [&]{ operator<<(s, x) << ", "; }());}, t); return s << "\b\b)"; }
+	// Output operator for optional, expected, and variant
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const std::optional<T>& o) { if(o) return s << *o; return s << "null"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const std::optional<T>&& o) { if(o) return s << *o; return s << "null"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const tl::optional<T>& o) { if(o) return s << *o; return s << "null"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const tl::optional<T>&& o) { if(o) return s << *o; return s << "null"; }
+	template<class T1, class... Ts> inline std::ostream& operator << (std::ostream& s, const std::variant<T1, Ts...>& v) { std::visit([&](const auto& x) { s << x; }, std::forward<const std::variant<T1, Ts...>&>(v)); return s; }
+	template<class T1, class... Ts> inline std::ostream& operator << (std::ostream& s, const std::variant<T1, Ts...>&& v) { std::visit([&](const auto& x) { s << x; }, std::forward<const std::variant<T1, Ts...>&&>(v)); return s; }
+
+	// str built in function
+	inline dl::string str(std::string& s) { return s; }
+	inline dl::string str(std::string&& s) { return std::move(s); }
+	inline const dl::string str(const std::string& s) { return s; }
+	inline const dl::string str(const std::string&& s) { return std::move(s); }
+	inline dl::string str(dl::string& s) { return s; }
+	inline dl::string str(dl::string&& s) { return std::move(s); }
+	inline const dl::string str(const dl::string& s) { return s; }
+	inline const dl::string str(const dl::string&& s) { return s; }
+	inline dl::string str(std::string_view& s) { return dl::string(s); }
+	inline dl::string str(std::string_view&& s) { return dl::string(std::move(s)); }
+	inline const dl::string str(const std::string_view& s) { return dl::string(s); }
+	inline const dl::string str(const std::string_view&& s) { return dl::string(std::move(s)); }
+	inline dl::string str(dl::string::view& s) { return dl::string(s); }
+	inline dl::string str(dl::string::view&& s) { return dl::string(std::move(s)); }
+	inline const dl::string str(const dl::string::view& s) { return dl::string(s); }
+	inline const dl::string str(const dl::string::view&& s) { return dl::string(s); }
+	template<typename T> inline dl::string str(T& s) { std::ostringstream out; out << s; return out.str(); }
+	template<typename T> inline dl::string str(T&& s) { std::ostringstream out; out << s; return out.str(); }
+	template<typename T> inline const dl::string str(const T& s) { std::ostringstream out; out << s; return out.str(); }
+	template<typename T> inline const dl::string str(const T&& s) { std::ostringstream out; out << s; return out.str(); }
+
+	// Contains wrappers (automatically picks up if the class has an explicit contains function, otherwises uses find != npos, or std::find if all else fails)
+	template <std::concepts::has_contains_function T, typename T2> constexpr inline bool contains(const T haystack, const T2 needle) { return haystack.contains(needle); }
+	template <std::concepts::has_find_function T, typename T2> requires (!std::concepts::has_contains_function<T> && !std::concepts::has_npos_constant<T>) constexpr inline bool contains(const T haystack, const T2 needle) { return haystack.find(needle) != haystack.end(); }
+	template <std::concepts::has_find_function T, typename T2> requires (!std::concepts::has_contains_function<T> && std::concepts::has_npos_constant<T>) constexpr inline bool contains(const T haystack, const T2 needle) { return haystack.find(needle) != T::npos; }
+	template <std::concepts::iterable T, typename T2> requires (!std::concepts::has_contains_function<T> && !std::concepts::has_find_function<T>) constexpr inline bool contains(const T haystack, const T2 needle) { return std::find(haystack.begin(), haystack.end(), needle) != haystack.end(); }
+
+	// Typesafe varidic min/max // TODO: look at generated assembly of these functions
+	template <typename T1, typename T2> constexpr inline typename std::common_type<T1, T2>::type max(T1&& a, T2&& b) noexcept { return a > b ? std::forward<T1>(a) : std::forward<T2>(b); }
+	template <typename T, typename... Ts> constexpr inline typename std::common_type<T, Ts...>::type max(T&& a, Ts&&... rest) noexcept { return max(std::forward<T>(a), max(std::forward<Ts>(rest)...)); }
+	template <typename T1, typename T2> constexpr inline typename std::common_type<T1, T2>::type min(T1&& a, T2&& b) noexcept { return a < b ? std::forward<T1>(a) : std::forward<T2>(b); }
+	template <typename T, typename... Ts> constexpr inline typename std::common_type<T, Ts...>::type min(T&& a, Ts&&... rest) noexcept { return min(std::forward<T>(a), min(std::forward<Ts>(rest)...)); }
+	// Custom comparison
+	template <typename T1, typename T2, typename Compare> constexpr inline typename std::common_type<T1, T2>::type maxc(const Compare comp, T1&& a, T2&& b) noexcept { return comp(a, b) ? std::forward<T1>(a) : std::forward<T2>(b); }
+	template <typename T, typename... Ts, typename Compare> constexpr inline typename std::common_type<T, Ts...>::type maxc(const Compare comp, T&& a, Ts&&... rest) noexcept { return maxc(comp, std::forward<T>(a), maxc(comp, std::forward<Ts>(rest)...)); }
+	template <typename T1, typename T2, typename Compare> constexpr inline typename std::common_type<T1, T2>::type minc(const Compare comp, T1&& a, T2&& b) noexcept { return comp(a, b) ? std::forward<T1>(a) : std::forward<T2>(b); }
+	template <typename T, typename... Ts, typename Compare> constexpr inline typename std::common_type<T, Ts...>::type minc(const Compare comp, T&& a, Ts&&... rest) noexcept { return minc(comp, std::forward<T>(a), minc(comp, std::forward<Ts>(rest)...)); }
+
+	// Boolean (varargs) any, all, and none functions.
+	constexpr inline bool any_of() noexcept { return false; }
+	template<typename... Args> constexpr inline bool any_of(const bool first, Args... args) noexcept { if (first) return true; else return any_of(args...); }
+	constexpr inline bool all_of() noexcept { return true; }
+	template<typename... Args> constexpr inline bool all_of(const bool first, Args... args) noexcept { if (first) return all_of(args...); else return false; }
+	constexpr inline bool none_of() noexcept { return true; }
+	template<typename... Args> constexpr inline bool none_of(const bool first, Args... args) noexcept { if (first) return false; else return none_of(args...); }
+
+	// Typename demangler
+	inline string demangle(const std::type_info& type) { return folly::demangle(type); }
+}
+
+namespace std {
+	// Import functions for optional and expected
+	using namespace tl;
+
+	// Boolean (varargs) any, all, and none functions (aliases to the builtin versions)
+	constexpr inline bool any_of() noexcept { return dl::builtin::any_of(); }
+	template<typename... Args> constexpr inline bool any_of(bool first, Args... args) noexcept { return dl::builtin::any_of(first, args...); }
+	constexpr inline bool all_of() noexcept { return dl::builtin::all_of(); }
+	template<typename... Args> constexpr inline bool all_of(bool first, Args... args) noexcept { return dl::builtin::all_of(first, args...); }
+	constexpr inline bool none_of() noexcept { return dl::builtin::none_of(); }
+	template<typename... Args> constexpr inline bool none_of(bool first, Args... args) noexcept { return dl::builtin::any_of(first, args...); }
+
+	// Typename demangler (alias to the builtin version)
+	inline string demangle(const std::type_info& type) { return dl::builtin::demangle(type); }
+}
+
+// Unndefine min/max macros
+#ifdef MAX
+#undef MAX
+#endif
+#ifdef max
+#undef max
+#endif
+#ifdef MIN
+#undef MIN
+#endif
+#ifdef min
+#undef min
+#endif
+
+#endif // ___DUCKED_C_HPP___

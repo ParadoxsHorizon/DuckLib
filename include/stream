@@ -1,0 +1,139 @@
+#ifndef ___DUCKED_C_STREAM_HPP___
+#define ___DUCKED_C_STREAM_HPP___
+#include <sstream>
+#include <iomanip>
+#include "rang.hpp"
+#include "dl/concepts"
+#include <source_location>
+#include "Demangle.h"
+
+namespace std::term {
+	// Pull the termcolor namespace into std::termcolor
+	using rang::style;
+	using rang::fg;
+	using rang::bg;
+	using fgb = rang::fgB;
+	using bgb = rang::bgB;
+	using rang::control;
+
+	// Facilitate changing the mode
+	inline void set_control_mode(const control value) noexcept { rang::setControlMode(value); }
+	inline rang::control get_control_mode() noexcept { return rang::rang_implementation::controlMode(); }
+
+	namespace detail {
+		struct location_wrapper {
+			using sl = std::source_location;
+			sl location;
+
+			constexpr location_wrapper(sl location = sl::current()) : location(location) {}
+		};
+	}
+
+	struct info : public detail::location_wrapper { constexpr info(sl location = sl::current()) : location_wrapper(location) {} };
+	inline ostream& operator <<(ostream& s, info i) {
+		return s << style::reset << '[' << i.location.file_name() << ":" << i.location.line() << "] ";
+	}
+
+	struct warning : public detail::location_wrapper { constexpr warning(sl location = sl::current()) : location_wrapper(location) {} };
+	inline ostream& operator <<(ostream& s, warning w) {
+		return s << fg::yellow << '[' << w.location.file_name() << ":" << w.location.line() << "] ";
+	}
+
+	struct error : public detail::location_wrapper { constexpr error(sl location = sl::current()) : location_wrapper(location) {} };
+	inline ostream& operator <<(ostream& s, error w) {
+		return s << fg::red << '[' << w.location.file_name() << ":" << w.location.line() << "] ";
+	}
+
+	struct fatal : public detail::location_wrapper { constexpr fatal(sl location = sl::current()) : location_wrapper(location) {} };
+	inline ostream& operator <<(ostream& s, fatal w) {
+		return s << fg::gray << bg::red << '[' << w.location.file_name() << ":" << w.location.line() << "] ";
+	}
+
+	struct debug : public detail::location_wrapper { constexpr debug(sl location = sl::current()) : location_wrapper(location) {} };
+	inline ostream& operator <<(ostream& s, debug w) {
+		return s << fg::gray << bg::cyan << '[' << w.location.file_name() << ":" << w.location.line() << "] ";
+	}
+} // std::ios
+
+// Debug stream (thin wrapper around ostream)
+namespace std {
+	template<class CharT, class Traits = std::char_traits<CharT>>
+	class basic_odebugstream : public basic_ostream<CharT, Traits> {
+		using Base = basic_ostream<CharT, Traits>;
+	public:
+		using Base::Base;
+
+		// When initialized with an ostream... sync their rdbufs
+		basic_odebugstream(const Base& o) : Base() { Base::rdbuf(o.rdbuf()); }
+		// Unlink when this stream is destroyed
+		~basic_odebugstream() {
+			Base::flush();
+			// TODO: Core-dump
+			Base::rdbuf(nullptr);
+		}
+
+		// Generic function which prints out anything printable
+		template<typename T> requires(std::concepts::outputable<T>)
+		basic_odebugstream& operator<<(const T& value) {
+			ostream& s = *this;
+			s << "(" << folly::demangle(typeid(T)) << ") " << value; // TODO: Test demangling on windows
+			return *this;
+		}
+
+		// Generic function which prints out the address of anything non-printable
+		template<typename T> requires(!std::concepts::outputable<T>)
+		basic_odebugstream& operator<<(const T& value) {
+			ostream& s = *this;
+			s << "(" << folly::demangle(typeid(T)) << ") at " << &value; // TODO: Test demangling on windows
+			return *this;
+		}
+
+		// Simply pass functions through
+		basic_odebugstream& operator<<(std::ios_base& (*func)(std::ios_base&) ) { return Base::operator<<(func); }
+		basic_odebugstream& operator<<(std::basic_ios<CharT,Traits>& (*func)(std::basic_ios<CharT,Traits>&) ) { return Base::operator<<(func); }
+		basic_odebugstream& operator<<(Base& (*func)(Base&) ) { return (basic_odebugstream&) Base::operator<<(func); }
+		basic_odebugstream& operator<<(std::basic_odebugstream<CharT,Traits>& (*func)(std::basic_odebugstream<CharT,Traits>&) ) { return Base::operator<<(func); }
+
+		// Simply pass terminal coloring through
+		basic_odebugstream& operator<<(const term::info i) {
+			ostream& s = *this;
+			s << i << "\b[info] ";
+			return *this;
+		}
+
+		basic_odebugstream& operator<<(const term::warning w) {
+			ostream& s = *this;
+			s << w << "\b[warning] ";
+			return *this;
+		}
+
+		basic_odebugstream& operator<<(const term::error e) {
+			ostream& s = *this;
+			s << e << "\b[error] ";
+			return *this;
+		}
+
+		basic_odebugstream& operator<<(const term::fatal f) {
+			ostream& s = *this;
+			s << f << "\b[fatal] ";
+			return *this;
+		}
+
+		basic_odebugstream& operator<<(const term::debug d) {
+			ostream& s = *this;
+			s << d << "\b[debug] ";
+			return *this;
+		}
+	};
+
+	// Typedefs for two common debug streams
+	typedef basic_odebugstream<char> odebugstream;
+	typedef basic_odebugstream<wchar_t> wodebugstream;
+
+	// Connect cdbg to cerr
+	extern odebugstream cdbg;
+	extern wodebugstream wcdbg;
+}
+
+
+#endif // ___DUCKED_C_STREAM_HPP___

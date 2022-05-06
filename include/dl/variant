@@ -1,0 +1,166 @@
+#ifndef ___DUCKED_C_VARIANT_HPP___
+#define ___DUCKED_C_VARIANT_HPP___
+
+#include <variant>
+#include <any>
+#include <dl/type_traits>
+
+namespace dl {
+	template <class T0, class... Ts>
+	class variant : public std::variant<T0, Ts...> {
+		using Base = std::variant<T0, Ts...>;
+	public:
+		using legacy = Base;
+		using types = std::meta::make_list_t<T0, Ts...>;
+
+		using Base::Base;
+
+
+		// -- Extensions From: https://github.com/MarioSieg/ExtendedVariant --
+
+
+		/* Returns the index of the specified type. */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, T0, Ts...>>>
+		[[nodiscard]]
+		static constexpr size_t index_of() noexcept {
+			size_t r {0};
+			const auto accumulator = [&r](const bool equ) noexcept {
+				r += !equ;
+				return equ;
+			};
+			accumulator(std::is_same_v<T, T0>) || (accumulator(std::is_same_v<T, Ts>) || ...);
+			return r;
+		}
+
+		/* Check if variant currently holds T. */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, T0, Ts...>>>
+		[[nodiscard]]
+		constexpr bool  holds_type() const noexcept {
+			return this->index() == index_of<T>();
+		}
+
+		/* Check if variant currently holds T and if the values match. */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, T0, Ts...>>>
+		[[nodiscard]]
+		constexpr inline bool holds_value(T&& other) const noexcept {
+			return this->index() == index_of<T>() && std::get<T>(*this) == other;
+		}
+
+		/* Returns optional which contains the value if T is the current type, else std::nullopt. */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, T0, Ts...>>>
+		[[nodiscard]]
+		constexpr inline std::optional<T> value() const noexcept {
+			return this->holds_type<T>() ? std::optional<T> {std::get<T>(*this)} : std::optional<T> {std::nullopt};
+		}
+
+		/*
+		 *  Returns the containing value of T if T is the current type, else the a custom value of T.
+		 */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, T0, Ts...>>>
+		[[nodiscard]]
+		constexpr inline T value_or(const T&& instead) const noexcept {
+			return this->holds_type<T>() ? std::get<T>(*this) : instead;
+		}
+
+		/*
+		 *  Returns the containing value of T if T is the current type, else invokes the lambda which returns a value instead.
+		 */
+		template <typename T, typename F, typename... Args>
+		[[nodiscard]]
+		constexpr inline T value_or_invoke(F&& functor, Args&&...args) const noexcept( noexcept(functor()) ) {
+			static_assert(std::pack_contains_type_v<T, T0, Ts...>, "Only types explicitly listed are supported!");
+			static_assert(std::is_convertible_v<decltype(std::invoke(functor, std::forward<Args>()...)), T>, "Functor must return a T convertible type!");
+			return this->holds_type<T>() ? std::get<T>(*this) : std::invoke(functor, std::forward<Args>(args)...);
+		}
+		
+		[[nodiscard]] 
+		std::any any() {
+			std::any out;
+			std::visit([&out](auto& val) { out = val; });
+			return out;
+		}
+	};
+
+	class any : public std::any {
+		using Base = std::any;
+	public:
+		using legacy = Base;
+		using Base::Base;
+
+
+		// -- Extensions From: https://github.com/MarioSieg/ExtendedVariant --
+
+
+		/* Check if variant currently holds T. */
+		template <typename T>
+		[[nodiscard]]
+		bool holds_type() const noexcept {
+			return typeid(T) == this->type();
+		}
+
+		/* Check if variant currently holds T and if the values match. */
+		template <typename T>
+		[[nodiscard]]
+		inline bool holds_value(T&& other) const noexcept {
+			return typeid(T) == this->type() && std::any_cast<T>(*this) == other;
+		}
+
+		/* Returns optional which contains the value if T is the current type, else std::nullopt. */
+		template <typename T>
+		[[nodiscard]]
+		inline std::optional<T> value() const noexcept {
+			return this->holds_type<T>() ? std::optional<T> {std::any_cast<T>(*this)} : std::optional<T> {std::nullopt};
+		}
+
+		/*
+		 *  Returns the containing value of T if T is the current type, else the a custom value of T.
+		 */
+		template <typename T>
+		[[nodiscard]]
+		inline T value_or(const T&& instead) const noexcept {
+			return this->holds_type<T>() ? std::any_cast<T>(*this) : instead;
+		}
+
+
+		/*
+		 *  Returns the containing value of T if T is the current type, else invokes the lambda which returns a value instead.
+		 */
+		template <typename T, typename F, typename... Args>
+		[[nodiscard]]
+		inline T value_or_invoke(F&& functor, Args&&...args) const noexcept( noexcept(functor()) ) {
+			static_assert(std::is_convertible_v<decltype(std::invoke(functor, std::forward<Args>()...)), T>, "Functor must return a T convertible type!");
+			return this->holds_type<T>() ? std::any_cast<T>(*this) : std::invoke(functor, std::forward<Args>(args)...);
+		}
+
+		// Cast to a variant
+		template <typename T0, typename... Ts>
+		[[nodiscard]]
+		dl::variant<T0, Ts...> variant() const {
+			dl::variant<T0, Ts...> out;
+			convert_helper<T0, Ts...>(out);
+			return out;
+		}
+
+		// Cast to a variant with types defined by the variant's `types` member
+		template <typename T0, typename... Ts>
+		[[nodiscard]]
+		dl::variant<T0, Ts...> variant(std::meta::list<T0, Ts...>) const {
+			return variant<T0, Ts...>();
+		}
+
+	protected:
+		// Conversion helper
+		template<typename Head, typename... Tail, typename... Ts>
+		void convert_helper(dl::variant<Ts...>& v) const {
+			// If we hold the given type then cast to that type...
+			if (holds_type<Head>())
+				v = std::any_cast<Head>(*this);
+			// If we don't hold the given type, and there are no more types to check... this is a bad cast
+			else if constexpr (sizeof...(Tail) == 0) throw std::bad_any_cast();
+			// Otherwise check the next type
+			else convert_helper<Tail...>(v);
+		}
+	};
+}
+
+#endif //___DUCKED_C_VARIANT_HPP___
