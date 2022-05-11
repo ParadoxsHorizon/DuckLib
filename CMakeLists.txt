@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(basic_cpp LANGUAGES CXX)
+project(DuckLib LANGUAGES CXX)
 
 #Force colors in Ninja
 option (FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." TRUE)

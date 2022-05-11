@@ -1,0 +1,9 @@
+#ifndef ___DUCKED_C_PROCESS_HPP___
+#define ___DUCKED_C_PROCESS_HPP___
+
+#include <boost/process.hpp>
+
+// TODO: We need to experiment with this and adjust the interface
+namespace std::process { using namespace boost::process; }
+
+#endif // ___DUCKED_C_PROCESS_HPP___

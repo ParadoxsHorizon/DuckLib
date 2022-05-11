@@ -512,6 +512,8 @@ namespace dl {
 		using Ext::toupper;
 		using Ext::tolower;
 
+		// Intrinsic Coehersion from char
+		constexpr basic_string(const CharType c) : Base(1, c) {}
 		// Intrinsic Coehersion from std::string's
 		constexpr basic_string(const std::basic_string<CharType, Traits, Alloc>& base) : Base(base) {}
 		constexpr basic_string(const std::basic_string<CharType, Traits, Alloc>&& base) : Base(base) {}
@@ -542,6 +544,9 @@ namespace dl {
 		constexpr inline basic_string operator+(const std::basic_string_view<CharType, Traits> other) const { auto out = *this; out.append(other.data(), other.size()); return out; }
 		constexpr inline basic_string& operator+=(const std::basic_string_view<CharType, Traits> other) { Base::append(other.data(), other.size()); return *this; }
 
+		// Support appending a single char to the string
+		constexpr inline basic_string operator+(const CharType other) const { auto out = *this; out.append(1, other); return out; }
+		constexpr inline basic_string& operator+=(const CharType other) { Base::append(1, other); return *this; }
 
 		// Update replace to match naming specifications (original functions result in a copy)
 		constexpr inline basic_string replace (std::modify_original_t, size_t pos, size_t len, const Base& str) { return Base::replace(pos, len, str); }
