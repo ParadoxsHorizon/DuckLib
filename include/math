@@ -1,0 +1,49 @@
+#ifndef __DUCKED_C_MATH__
+#define __DUCKED_C_MATH__
+
+#include <nytl/math.hpp>
+#include <nytl/approx.hpp>
+#include <cmath>
+#include <complex>
+#include <numeric>
+#include <concepts>
+#include "number"
+
+namespace std {
+	using namespace nytl::approxOps;
+
+	using nytl::approx;
+	using nytl::degrees;
+	using nytl::radians;
+	using nytl::mix;
+	using nytl::smoothstep;
+
+	template<typename T>
+	constexpr auto lerp(T x, T y, T a) { return mix(x, y, a); }
+
+	/// Maps the given signed number onto a unique unsigned one.
+	/// Maps 0 to 0, 1 to 2, 2 to 4, -1 to 1, -2 to 3 and so on.
+	template <std::signed_integral S>
+	constexpr typename std::make_unsigned<S>::type map_unsigned(S x) {
+		return (x < 0) ? -x * 2 - 1 : x * 2;
+	}
+
+	/// Reverses the mapUnsigned function.
+	/// Returns the signed number that would be mapped onto the given unique
+	/// unsigned number.
+	template <std::unsigned_integral U>
+	constexpr auto unmap_unsigned(U x) {
+		auto ix = static_cast<typename std::make_signed<U>::type>(x);
+		return (ix % 2) ? -(ix + 1) / 2 : ix / 2;
+	}
+
+	/// Combines the two given unsigned numbers into a single unique one
+	/// using the cantorsche pairing function. Combine it with calls
+	/// to mapUnsigned to enable it for signed x,y inputs.
+	template <std::unsigned_integral U>
+	constexpr auto numeric_pair(U x, U y) {
+		return (x + y) * (x + y + 1) / 2 + y;
+	}
+}
+
+#endif // __DUCKED_C_MATH__

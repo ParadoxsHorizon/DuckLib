@@ -32,7 +32,7 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-literal-suffix -std=c++20")
 # add_compile_options (-flto -Wall -Wextra)
 
 file(GLOB sources "src/*.cpp" "src/*.c" "thirdparty/DuckLibLite/src/*.cpp")
-set(includes "src/" "include/" ${ext_include_dir} ${Boost_INCLUDE_DIRS} "thirdparty/" "thirdparty/doctest/doctest" "thirdparty/mdspan/include/")
+set(includes "src/" "include/" ${ext_include_dir} ${Boost_INCLUDE_DIRS} "thirdparty/" "thirdparty/doctest/doctest" "thirdparty/mdspan/include/" "thirdparty/nytl")
 set(systemIncludes "include/std")
 set(libraries utf8::cpp nanobench doctest ${Boost_LIBRARIES} unwind::unwind dwarf::dwarf)
 

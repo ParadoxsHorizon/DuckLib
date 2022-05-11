@@ -928,3 +928,38 @@ TEST_CASE( "Delegate" ) {
 // 		std::cerr << (a + b) << std::__1::endl;
 // 	};
 // }
+
+#include <math>
+
+TEST_CASE( "Math" ) {
+	CHECK(std::lerp(0., 5, .5) == 2.5);
+	CHECK(std::smoothstep(0., 5., .5) == std::approx(0.028));
+
+	CHECK(std::map_unsigned(50) == 100);
+	CHECK(std::map_unsigned(-50) == 99);
+	CHECK(std::unmap_unsigned(100u) == 50);
+	CHECK(std::unmap_unsigned(99u) == -50);
+
+	CHECK(std::numeric_pair(50u, 60u) == 6165);
+	CHECK(std::numeric_pair(std::map_unsigned(-50), std::map_unsigned(-60)) == 23990);
+}
+
+enum class MyEnum { Value1 = 1 << 0, Value2 = 1 << 1, Value3 = 1 << 2 };
+FLAG_OPS(MyEnum)
+
+TEST_CASE( "Flags" ) {
+	auto mask1 = MyEnum::Value1 | MyEnum::Value2; // set flags Value1 and Value 2
+	CHECK( (mask1 & MyEnum::Value1) > 0 );
+	CHECK( (mask1 & MyEnum::Value2) > 0 );
+	CHECK( (mask1 & MyEnum::Value3) == 0 );
+
+	auto mask2 = MyEnum::Value3 | MyEnum::Value2;
+	CHECK( (mask2 & MyEnum::Value1) == 0 );
+	CHECK( (mask2 & MyEnum::Value2) > 0 );
+	CHECK( (mask2 & MyEnum::Value3) > 0 );
+
+	mask2 = mask1;
+	CHECK( (mask2 & MyEnum::Value1) > 0 );
+	CHECK( (mask2 & MyEnum::Value2) > 0 );
+	CHECK( (mask2 & MyEnum::Value3) == 0 );
+}
