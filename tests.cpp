@@ -630,52 +630,77 @@ TEST_CASE( "Generator" ) {
 		CHECK(x == last++);
 }
 
-// TEST_CASE( "Variant" ) {
-// 	using variant = dl::variant<int, string, float>;
-// 	variant v;
-// 	v = "bob";
-// 	v = 7;
+TEST_CASE( "Variant & Any" ) {
+	using variant = dl::variant<int, string, float>;
+	variant v;
+	v = "bob";
+	v = 7;
 
-// 	CHECK( v.holds_type<int>() == true );
-// 	CHECK( v.holds_value(7) == true );
-// 	CHECK( *v.value<int>() == 7 );
-// 	CHECK( v.value<string>() == std::nullopt );
+	CHECK( v.holds_type<int>() == true );
+	CHECK( v.holds_value(7) == true );
+	CHECK( *v.value<int>() == 7 );
+	// CHECK( v.value<string>() == std::nullopt );
 
-// 	any a;
-// 	a = (string) "bob";
+	any a;
+	a = (string) "bob";
 
-// 	CHECK( a.holds_type<string>() == true );
-// 	CHECK( a.holds_value<string>("bob") == true );
-// 	CHECK( *a.value<string>() == "bob" );
-// 	CHECK( a.value_or<int>(0) == 0 );
+	CHECK( a.holds_type<string>() == true );
+	CHECK( a.holds_value<string>("bob") == true );
+	CHECK( *a.value<string>() == "bob" );
+	CHECK( a.value_or<int>(0) == 0 );
 
-// 	v = a.variant<int, string, float>();
+	v = a.variant<int, string, float>();
 
-// 	CHECK( v.holds_type<string>() == true );
-// 	CHECK( v.holds_value<string>("bob") == true );
-// 	CHECK( *v.value<string>() == "bob" );
-// 	CHECK( v.value<int>() == std::nullopt );
+	CHECK( v.holds_type<string>() == true );
+	CHECK( v.holds_value<string>("bob") == true );
+	CHECK( *v.value<string>() == "bob" );
+	// CHECK( v.value<int>() == std::nullopt );
 
-// 	a = 7;
-// 	v = a.variant(variant::types{});
+	a = 7;
+	v = a.variant(variant::types{});
 
-// 	CHECK( v.holds_type<int>() == true );
-// 	CHECK( v.holds_value(7) == true );
-// 	CHECK( *v.value<int>() == 7 );
-// 	CHECK( v.value<string>() == std::nullopt );
+	CHECK( v.holds_type<int>() == true );
+	CHECK( v.holds_value(7) == true );
+	CHECK( *v.value<int>() == 7 );
+	// CHECK( v.value<string>() == std::nullopt );
 
-// 	expected<int, string> e = 7;
-// 	// optional<int> i = v.value<int>();
+	dl::variant<int, string, float, bool> v2 = v;
+	CHECK( v2.holds_type<int>() == true );
+	CHECK( v2.holds_value(7) == true );
+	CHECK( *v2.value<int>() == 7 );
+}
 
-// 	CHECK( e.has_value() == true );
-// 	CHECK( e.value() == 7 );
+TEST_CASE( "Variant of Variants" ) {
+	struct Identifier {};
 
-// 	e = std::make_unexpected<string>("An error occured!");
+	using LiteralVariant = std::variant<string, rational, bool>;
+	using IdentififerLiteralVariant = std::variant<Identifier, string, rational, bool>;
 
-// 	CHECK( e.has_value() == false );
-// 	CHECK( e.value_or(0) == 0 );
-// 	CHECK( e.error() == "An error occured!" );
-// }
+	std::variant<Identifier, LiteralVariant> v;
+	if(v.index() == 0) {
+		std::do_not_optimize( std::get<Identifier>(v) );
+		CHECK(true == true);
+	} else {
+		IdentififerLiteralVariant out;
+		std::visit([&out](auto& val) { out = val; }, std::get<LiteralVariant>(v));
+		std::do_not_optimize(out);
+		CHECK(false == true);
+	}
+}
+
+TEST_CASE( "Expected" ) {
+	expected<int, string> e = 7;
+	// optional<int> i = v.value<int>();
+
+	CHECK( e.has_value() == true );
+	CHECK( e.value() == 7 );
+
+	e = std::make_unexpected<string>("An error occured!");
+
+	CHECK( e.has_value() == false );
+	CHECK( e.value_or(0) == 0 );
+	CHECK( e.error() == "An error occured!" );
+}
 
 
 #include <delegate>

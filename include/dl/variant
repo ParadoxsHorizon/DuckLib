@@ -14,6 +14,31 @@ namespace dl {
 		using types = std::meta::make_list_t<T0, Ts...>;
 
 		using Base::Base;
+		using Base::operator=;
+
+		template<class... TsO>
+		variant(const std::variant<TsO...>& other) { *this = other; }
+		template<class... TsO>
+		constexpr variant& operator=(const std::variant<TsO...>& other) {
+			std::visit([this](const auto& val){
+				if constexpr(std::pack_contains_type_v<typename std::remove_cvref<decltype(val)>::type, T0, Ts...>)
+					*this = val;
+				else throw std::bad_variant_access();
+			}, other);
+			return *this;
+		}
+
+		template<class... TsO>
+		variant(std::variant<TsO...>&& other) { *this = std::move(other); }
+		template<class... TsO>
+		constexpr variant& operator=(std::variant<TsO...>&& other) {
+			std::visit([this](auto& val){
+				if constexpr(std::pack_contains_type_v<typename std::remove_cvref<decltype(val)>::type, T0, Ts...>)
+					*this = std::move(val);
+				else throw std::bad_variant_access();
+			}, other);
+			return *this;
+		}
 
 
 		// -- Extensions From: https://github.com/MarioSieg/ExtendedVariant --
@@ -35,7 +60,7 @@ namespace dl {
 		/* Check if variant currently holds T. */
 		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, T0, Ts...>>>
 		[[nodiscard]]
-		constexpr bool  holds_type() const noexcept {
+		constexpr bool holds_type() const noexcept {
 			return this->index() == index_of<T>();
 		}
 
@@ -54,7 +79,7 @@ namespace dl {
 		}
 
 		/*
-		 *  Returns the containing value of T if T is the current type, else the a custom value of T.
+		 * Returns the containing value of T if T is the current type, else the a custom value of T.
 		 */
 		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, T0, Ts...>>>
 		[[nodiscard]]
@@ -63,7 +88,7 @@ namespace dl {
 		}
 
 		/*
-		 *  Returns the containing value of T if T is the current type, else invokes the lambda which returns a value instead.
+		 * Returns the containing value of T if T is the current type, else invokes the lambda which returns a value instead.
 		 */
 		template <typename T, typename F, typename... Args>
 		[[nodiscard]]
@@ -72,11 +97,18 @@ namespace dl {
 			static_assert(std::is_convertible_v<decltype(std::invoke(functor, std::forward<Args>()...)), T>, "Functor must return a T convertible type!");
 			return this->holds_type<T>() ? std::get<T>(*this) : std::invoke(functor, std::forward<Args>(args)...);
 		}
-		
-		[[nodiscard]] 
+
+		// Visit wrapper
+		template <class Visitor>
+		inline auto visit(Visitor&& vis) { return std::visit(vis, *this); }
+		template <class R, class Visitor>
+		inline R visit(Visitor&& vis) { return std::visit<R>(vis, *this); }
+
+		// Any conversion
+		[[nodiscard]]
 		std::any any() {
 			std::any out;
-			std::visit([&out](auto& val) { out = val; });
+			visit([&out](auto& val) { out = val; });
 			return out;
 		}
 	};
@@ -113,7 +145,7 @@ namespace dl {
 		}
 
 		/*
-		 *  Returns the containing value of T if T is the current type, else the a custom value of T.
+		 * Returns the containing value of T if T is the current type, else the a custom value of T.
 		 */
 		template <typename T>
 		[[nodiscard]]
@@ -123,7 +155,7 @@ namespace dl {
 
 
 		/*
-		 *  Returns the containing value of T if T is the current type, else invokes the lambda which returns a value instead.
+		 * Returns the containing value of T if T is the current type, else invokes the lambda which returns a value instead.
 		 */
 		template <typename T, typename F, typename... Args>
 		[[nodiscard]]
@@ -162,5 +194,20 @@ namespace dl {
 		}
 	};
 }
+
+namespace std {
+	template<typename... Ts>
+	struct variant_size<dl::variant<Ts...>> : public variant_size<typename dl::variant<Ts...>::legacy> {
+		using Base = variant_size<typename dl::variant<Ts...>::legacy>;
+		using Base::value;
+		using Base::type;
+	};
+
+	template<size_t I, typename... Ts>
+	struct variant_alternative<I, dl::variant<Ts...>> : public variant_alternative<I, typename dl::variant<Ts...>::legacy> {
+		using Base = variant_alternative<I, typename dl::variant<Ts...>::legacy>;
+		using Base::type;
+	};
+} // std
 
 #endif //___DUCKED_C_VARIANT_HPP___

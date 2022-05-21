@@ -99,10 +99,14 @@ namespace dl::builtin {
 	template<typename... T> inline std::ostream& operator << (std::ostream& s, const std::tuple<T...>& t) { s << "("; std::apply([&](auto& ...x) {(..., [&]{ operator<<(s, x) << ", "; }());}, t); return s << "\b\b)"; }
 	template<typename... T> inline std::ostream& operator << (std::ostream& s, const std::tuple<T...>&& t) { s << "("; std::apply([&](auto& ...x) {(..., [&]{ operator<<(s, x) << ", "; }());}, t); return s << "\b\b)"; }
 	// Output operator for optional, expected, and variant
-	template<typename T> inline std::ostream& operator << (std::ostream& s, const std::optional<T>& o) { if(o) return s << *o; return s << "null"; }
-	template<typename T> inline std::ostream& operator << (std::ostream& s, const std::optional<T>&& o) { if(o) return s << *o; return s << "null"; }
-	template<typename T> inline std::ostream& operator << (std::ostream& s, const tl::optional<T>& o) { if(o) return s << *o; return s << "null"; }
-	template<typename T> inline std::ostream& operator << (std::ostream& s, const tl::optional<T>&& o) { if(o) return s << *o; return s << "null"; }
+	inline std::ostream& operator << (std::ostream& s, const std::nullopt_t) { return s << "<null>"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const std::optional<T>& o) { if(o) return s << *o; return s << "<null>"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const std::optional<T>&& o) { if(o) return s << *o; return s << "<null>"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const tl::optional<T>& o) { if(o) return s << *o; return s << "<null>"; }
+	template<typename T> inline std::ostream& operator << (std::ostream& s, const tl::optional<T>&& o) { if(o) return s << *o; return s << "<null>"; }
+	template<typename T, typename E> inline std::ostream& operator << (std::ostream& s, const tl::expected<T, E>& o) { if(o) return s << *o; return s << "error(" << o.geterr() << ")"; }
+	template<typename T, typename E> inline std::ostream& operator << (std::ostream& s, const tl::expected<T, E>&& o) { if(o) return s << *o; return s << "error(" << o.geterr() << ")"; }
+	inline std::ostream& operator << (std::ostream& s, const std::monostate) { return s << "<null>"; }
 	template<class T1, class... Ts> inline std::ostream& operator << (std::ostream& s, const std::variant<T1, Ts...>& v) { std::visit([&](const auto& x) { s << x; }, std::forward<const std::variant<T1, Ts...>&>(v)); return s; }
 	template<class T1, class... Ts> inline std::ostream& operator << (std::ostream& s, const std::variant<T1, Ts...>&& v) { std::visit([&](const auto& x) { s << x; }, std::forward<const std::variant<T1, Ts...>&&>(v)); return s; }
 
