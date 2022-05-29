@@ -43,10 +43,11 @@ namespace std {
 
 // #define _BENCHMARK(name, lambda)
 
-#ifdef TESTING_DEFINE_MAIN
+#endif // ___DUCKED_C_TESTING_HPP___
+
+#if defined(TESTING_DEFINE_MAIN) && !defined(TESTING_MAIN_IS_DEFINED)
+#define TESTING_MAIN_IS_DEFINED
 DOCTEST_MSVC_SUPPRESS_WARNING_WITH_PUSH(4007) // 'function' : must be 'attribute' - see issue #182
 int main(int argc, char** argv) { return doctest::Context(argc, argv).run(); }
 DOCTEST_MSVC_SUPPRESS_WARNING_POP
 #endif // TESTING_DEFINE_MAIN
-
-#endif // ___DUCKED_C_TESTING_HPP___

@@ -1,6 +1,7 @@
 #ifndef ___DUCKED_C_VARIANT_HPP___
 #define ___DUCKED_C_VARIANT_HPP___
 
+#include <optional>
 #include <variant>
 #include <any>
 #include <dl/type_traits>

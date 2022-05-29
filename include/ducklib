@@ -175,6 +175,12 @@ namespace std {
 
 	// Typename demangler (alias to the builtin version)
 	inline string demangle(const std::type_info& type) { return dl::builtin::demangle(type); }
+
+	template<> struct hash<dl::string> : hash<std::string> {};
+	template<> struct hash<dl::string::view> : hash<std::string_view> {};
+	template<class T, size_t N> struct hash<dl::array<T, N>> : hash<std::array<T, N>> {};
+	template<class T, class A> struct hash<dl::vector<T, A>> : hash<std::vector<T, A>> {};
+	template<class T, class A> struct hash<std::dynamic_array<T, A>> : hash<dl::vector<T, A>> {};
 }
 
 // Unndefine min/max macros

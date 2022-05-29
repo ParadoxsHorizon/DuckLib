@@ -6,6 +6,7 @@
 #include <memory>
 #include <functional>
 #include <mutex>
+#include <shared_mutex>
 #include <dl/variant>
 
 namespace std {
@@ -55,6 +56,10 @@ namespace std {
 		constexpr delegate_function(const std::shared_ptr<argumentless_delegate_type> argumentlessDelegateFunctionPointer) noexcept
 		requires (!std::is_same_v<raw_function_type, argumentless_raw_function_type>)
 			: function(argumentlessDelegateFunctionPointer) { }
+
+		template<std::invocable<Args...> Functor>
+		constexpr delegate_function(Functor&& functor)
+			: function(std::make_shared<function_type>(std::move(functor))) { }
 
 		constexpr virtual ~delegate_function() = default;
 
@@ -116,7 +121,7 @@ namespace std {
 
 			// Compare the void pointers
 			return selfPtr <=> otherPtr;
-		};
+		}
 
 		constexpr bool operator==(const delegate_function& other) const {
 			return (*this <=> other) == std::strong_ordering::equal;
@@ -209,15 +214,22 @@ namespace std {
 		using delegate_type = Base;
 		using function_type = typename Base::function_type;
 
+		// Bool indiciating if the given type is a type of functor that needs to be proccessed differently from generic functors
+		template<typename T>
+		static constexpr bool is_base_functor = std::is_same_v<T, delegate_type> || std::is_same_v<T, function_type> || std::is_same_v<T, delegate>;
+
 		constexpr delegate() noexcept = default;
 
-		constexpr delegate(const delegate& delegate) { copyCallbacks(delegate); }
+		constexpr delegate(const delegate& delegate) : Base() { copyCallbacks(delegate); }
 		constexpr delegate(delegate&& delegate) noexcept { moveCallbacksUnsync(std::move(delegate)); }
 		constexpr delegate(const delegate_type& callback) { *this += callback; }
 		constexpr delegate(const delegate_type&& callback) { *this += std::move(callback); }
 		constexpr delegate(raw_function_type callback) { *this += callback; }
 		constexpr delegate(const function_type& callback) { *this += callback; }
 		constexpr delegate(const function_type&& callback) { *this += std::move(callback); }
+
+		template<std::invocable<Args...> Functor> requires (!is_base_functor<Functor>)
+		constexpr delegate(Functor&& functor) : delegate(std::move(delegate_type(std::move(functor)))) {}
 
 		constexpr delegate& operator=(const delegate& other) {
 			if (this !=& other)
@@ -261,6 +273,15 @@ namespace std {
 		}
 		constexpr inline delegate& set(const function_type&& other) { return this->operator=(std::move(other)); }
 
+		template<std::invocable<Args...> Functor> requires (!is_base_functor<Functor>)
+		constexpr delegate& operator=(Functor&& other) {
+			clearCallbacks();
+			*this += std::move(other);
+			return *this;
+		}
+		template<std::invocable<Args...> Functor> requires (!is_base_functor<Functor>)
+		constexpr inline delegate& set(Functor&& other) { return this->operator=(std::move(other)); }
+
 		constexpr virtual delegate& operator+=(const delegate_type& callback) {
 			callbacks.emplace_back(callback);
 			return *this;
@@ -281,6 +302,11 @@ namespace std {
 
 		constexpr inline delegate& operator+=(const function_type&& callback) { return *this += delegate_type {callback}; }
 		constexpr inline delegate& connect(const function_type&& callback) { return this->operator+=(std::move(callback)); }
+
+		template<std::invocable<Args...> Functor> requires (!is_base_functor<Functor>)
+		constexpr inline delegate& operator+=(Functor&& callback) { return *this += delegate_type {callback}; }
+		template<std::invocable<Args...> Functor> requires (!is_base_functor<Functor>)
+		constexpr inline delegate& connect(Functor&& callback) { return this->operator+=(std::move(callback)); }
 
 		constexpr virtual delegate& operator-=(const delegate_type& callback) {
 			auto searchResult = std::find(callbacks.begin(), callbacks.end(), callback);
@@ -332,6 +358,10 @@ namespace std {
 
 		constexpr inline void clear() { clearCallbacks(); }
 
+		constexpr auto size() const { return callbacks.size(); }
+		constexpr auto empty() const { return callbacks.empty(); }
+		constexpr operator bool() const { return !empty(); }
+
 	protected:
 		constexpr inline void moveCallbacksUnsync(delegate&& other) { callbacks = std::move(other.callbacks); }
 		constexpr inline void copyCallbacksUnsync(const delegate& other) { callbacks = other.callbacks; }
@@ -359,7 +389,7 @@ namespace std {
 	class delegate_locked<ReturnType(Args...)> : public delegate<ReturnType(Args...)> {
 		using Base = delegate<ReturnType(Args...)>;
 
-		mutable std::mutex mutex;
+		mutable std::shared_mutex mutex;
 	public:
 		using raw_function_type = typename Base::raw_function_type;
 		using delegate_type = typename Base::delegate_type;
@@ -368,28 +398,28 @@ namespace std {
 		using Base::Base;
 
 		inline Base& operator+=(const delegate_type& callback) override {
-			std::lock_guard lock(mutex);
+			std::unique_lock lock(mutex);
 			return Base::operator+=(callback);
 		}
 
 		inline Base& operator+=(const delegate_type&& callback) override {
-			std::lock_guard lock(mutex);
+			std::unique_lock lock(mutex);
 			return Base::operator+=(std::move(callback));
 		}
 
 		inline Base& operator-=(const delegate_type& callback) override {
-			const std::lock_guard lock {mutex};
+			std::unique_lock lock(mutex);
 			return Base::operator-=(callback);
 		}
 
 		inline ReturnType operator()(Args... args) const override {
-			const std::lock_guard lock(mutex);
+			const std::shared_lock lock(mutex);
 			return Base::operator()(std::forward<Args>(args)...);
 		}
 
 		template<typename T>
 		inline auto operator()(T&& returnBehavior, Args... args) const {
-			const std::lock_guard lock(mutex);
+			const std::shared_lock lock(mutex);
 			return Base::operator()(returnBehavior, std::forward<Args>(args)...);
 		}
 
@@ -401,18 +431,18 @@ namespace std {
 			// To prevent the deadlock the order of locking should be the same for all threads.
 			// We can use the addresses of delegates to sort the mutexes.
 			if (this < &other) {
-				std::lock_guard thisLock(mutex);
-				std::lock_guard otherLock(other.mutex);
+				std::unique_lock thisLock(mutex);
+				std::unique_lock otherLock(other.mutex);
 				copyCallbacksUnsync(other);
 			} else {
-				std::lock_guard otherLock(other.mutex);
-				std::lock_guard thisLock(mutex);
+				std::unique_lock otherLock(other.mutex);
+				std::unique_lock thisLock(mutex);
 				copyCallbacksUnsync(other);
 			}
 		}
 
 		inline void clearCallbacks() override {
-			std::lock_guard lock(mutex);
+			std::unique_lock lock(mutex);
 			Base::clearCallbacks();
 		}
 	};
