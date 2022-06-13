@@ -214,7 +214,7 @@ namespace std {
 		using delegate_type = Base;
 		using function_type = typename Base::function_type;
 
-		// Bool indiciating if the given type is a type of functor that needs to be proccessed differently from generic functors
+		// Bool indicating if the given type is a type of functor that needs to be processed differently from generic functors
 		template<typename T>
 		static constexpr bool is_base_functor = std::is_same_v<T, delegate_type> || std::is_same_v<T, function_type> || std::is_same_v<T, delegate>;
 

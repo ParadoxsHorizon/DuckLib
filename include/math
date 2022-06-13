@@ -21,7 +21,7 @@ namespace std {
 	template<typename T>
 	constexpr auto lerp(T x, T y, T a) { return mix(x, y, a); }
 
-	// Makes sure that a value is within the range [min, max], "overflowing" to the other end when value goes out of bounds
+	// Makes sure that a value is within the range [min, max], "overflowing" to the other end when value ges out of bounds
 	template<typename T>
 	constexpr auto wrap(T min, T max, T value) {
 		auto diff = max - min;

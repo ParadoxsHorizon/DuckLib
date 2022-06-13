@@ -472,13 +472,13 @@ TEST_CASE( "Enum Wrappers" ) {
 	CHECK( enumDerive::b == enumDerive::from_string("b") );
 	CHECK( enumDerive::from_string_caseless("f") == enumDerive::F );
 
-	bool exceptionOccured = false;
+	bool exceptionOccurred = false;
 	try {
 		enumDerive::from_string("f");
 	} catch (std::enum_conversion_error&) {
-		exceptionOccured = true;
+		exceptionOccurred = true;
 	}
-	CHECK( exceptionOccured == true );
+	CHECK( exceptionOccurred == true );
 
 	std::stringstream capture;
 	/* capture(std::cout) */{
@@ -702,11 +702,11 @@ TEST_CASE( "Expected" ) {
 	CHECK( e.has_value() == true );
 	CHECK( e.value() == 7 );
 
-	e = std::make_unexpected<string>("An error occured!");
+	e = std::make_unexpected<string>("An error occurred!");
 
 	CHECK( e.has_value() == false );
 	CHECK( e.value_or(0) == 0 );
-	CHECK( e.error() == "An error occured!" );
+	CHECK( e.error() == "An error occurred!" );
 }
 
 
@@ -786,7 +786,7 @@ TEST_CASE( "Delegate" ) {
 		return a / b;
 	}) );
 
-	// Convertable delegate
+	// Convertible delegate
 	s += std::make_delegate([](int a, int b) {
 		return a + b;
 	});
@@ -862,7 +862,7 @@ TEST_CASE( "Delegate" ) {
 // 	std::print << (a + b) << std::io::endl;
 
 // 	std::debug::print << (a + b) << std::io::endl;
-// 	std::perr << "This line is an errror" << std::io::endl;
+// 	std::perr << "This line is an error" << std::io::endl;
 
 // 	std::benchmark_header("IO");
 // 	BENCHMARK("fast_io") {

@@ -46,7 +46,7 @@ namespace std {
 	struct binary {
 	protected: 
 		T& data;
-		// Variable tracking the endianess of the binary data (used to preform a proper conversion on read)
+		// Variable tracking the endianness of the binary data (used to preform a proper conversion on read)
 		std::endian endian = std::endian::native;
 
 	public:

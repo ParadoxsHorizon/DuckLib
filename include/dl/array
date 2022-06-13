@@ -296,7 +296,7 @@ namespace std {
 
 			return Base::operator[](index);
 		}
-		// The const version will invoke an error if trying to acccess an element outside of the reserved array
+		// The const version will invoke an error if trying to access an element outside of the reserved array
 		constexpr const T& at(size_t index) const {
 			return Base::at(index);
 		}
