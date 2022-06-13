@@ -8,6 +8,7 @@
 #include "dl/concepts"
 #include "dl/type_traits"
 #include "utf8.h"
+#include "strnatcmp.h"
 
 namespace std {
 	static struct modify_original_t { explicit modify_original_t() = default; } modify_original;
@@ -106,6 +107,52 @@ namespace dl {
 			constexpr inline bool caseless_greater_equal(const std::string_view other) const { auto res = caseless_compare(other); return res == std::strong_ordering::greater || res == std::strong_ordering::equal; }
 			constexpr inline bool caseless_greater_equal(const Base& other) const { auto res = caseless_compare(other); return res == std::strong_ordering::greater || res == std::strong_ordering::equal; }
 			constexpr inline bool caseless_greater_equal(const char* other) const { auto res = caseless_compare(other); return res == std::strong_ordering::greater || res == std::strong_ordering::equal; }
+
+			struct caseless_comparator {
+				bool operator()(const Base& a, const Base& b) {
+					return a.caseless_compare(b) == std::strong_ordering::less;
+				}
+			};
+
+			constexpr inline auto natural_compare(const std::string_view other) const {
+				auto ret = strnatcasecmp(this->underlying().data(), other.data());
+				if (ret < 0) return std::strong_ordering::greater;
+				else if(ret > 0) return std::strong_ordering::less;
+				else return std::strong_ordering::equal;
+			}
+			constexpr inline auto natural_compare(const Base& other) const {
+				auto ret = strnatcasecmp(this->underlying().data(), other.data());
+				if (ret < 0) return std::strong_ordering::greater;
+				else if(ret > 0) return std::strong_ordering::less;
+				else return std::strong_ordering::equal;
+			}
+			constexpr inline auto natural_compare(const char* other) const {
+				auto ret = strnatcasecmp(this->underlying().data(), other);
+				if (ret < 0) return std::strong_ordering::greater;
+				else if(ret > 0) return std::strong_ordering::less;
+				else return std::strong_ordering::equal;
+			}
+			constexpr inline bool natural_equal(const std::string_view other) const { return natural_compare(other) == std::strong_ordering::equal; }
+			constexpr inline bool natural_equal(const Base& other) const { return natural_compare(other) == std::strong_ordering::equal; }
+			constexpr inline bool natural_equal(const char* other) const { return natural_compare(other) == std::strong_ordering::equal; }
+			constexpr inline bool natural_less(const std::string_view other) const { return natural_compare(other) == std::strong_ordering::less; }
+			constexpr inline bool natural_less(const Base& other) const { return natural_compare(other) == std::strong_ordering::less; }
+			constexpr inline bool natural_less(const char* other) const { return natural_compare(other) == std::strong_ordering::less; }
+			constexpr inline bool natural_less_equal(const std::string_view other) const { auto res = natural_compare(other); return res == std::strong_ordering::less || res == std::strong_ordering::equal; }
+			constexpr inline bool natural_less_equal(const Base& other) const { auto res = natural_compare(other); return res == std::strong_ordering::less || res == std::strong_ordering::equal; }
+			constexpr inline bool natural_less_equal(const char* other) const { auto res = natural_compare(other); return res == std::strong_ordering::less || res == std::strong_ordering::equal; }
+			constexpr inline bool natural_greater(const std::string_view other) const { return natural_compare(other) == std::strong_ordering::greater; }
+			constexpr inline bool natural_greater(const Base& other) const { return natural_compare(other) == std::strong_ordering::greater; }
+			constexpr inline bool natural_greater(const char* other) const { return natural_compare(other) == std::strong_ordering::greater; }
+			constexpr inline bool natural_greater_equal(const std::string_view other) const { auto res = natural_compare(other); return res == std::strong_ordering::greater || res == std::strong_ordering::equal; }
+			constexpr inline bool natural_greater_equal(const Base& other) const { auto res = natural_compare(other); return res == std::strong_ordering::greater || res == std::strong_ordering::equal; }
+			constexpr inline bool natural_greater_equal(const char* other) const { auto res = natural_compare(other); return res == std::strong_ordering::greater || res == std::strong_ordering::equal; }
+
+			struct natural_comparator {
+				bool operator()(const Base& a, const Base& b) {
+					return a.natural_compare(b) == std::strong_ordering::less;
+				}
+			};
 
 			constexpr Base ltrim (const CharType* delims = " \t\v\f\r\n") const {
 				if(size_t pos = this->underlying().find_first_not_of(delims); pos != npos)
@@ -426,6 +473,9 @@ namespace dl {
 		using Ext::toupper;
 		using Ext::tolower;
 
+		using Ext::caseless_comparator;
+		using Ext::natural_comparator;
+
 		// Intrinsic Coehersion from std::string's
 		constexpr basic_string_view(const std::string& base) : Base(base) {}
 		constexpr basic_string_view(const std::string&& base) : Base(base) {}
@@ -511,6 +561,9 @@ namespace dl {
 		using Ext::crend;
 		using Ext::toupper;
 		using Ext::tolower;
+
+		using Ext::caseless_comparator;
+		using Ext::natural_comparator;
 
 		// Intrinsic Coehersion from char
 		constexpr basic_string(const CharType c) : Base(1, c) {}
@@ -881,12 +934,18 @@ namespace dl {
 	template<typename C, typename T, typename A> constexpr inline basic_string<C, T, A> operator+(const std::basic_string_view<C, T> a, const basic_string<C, T, A>&& b) { return basic_string<C, T, A>(a) + b; }
 
 	template<class T>
-	class utf8Itterator : public std::iterator<std::random_access_iterator_tag, T> {
+	class utf8Itterator {
 		T* referencedString;
 		typename T::iterator iterator;
 		using allocatedString = basic_string<typename T::value_type, typename T::traits_type>;
 
 	public:
+		using iterator_category = std::random_access_iterator_tag;
+		using value_type = T;
+		using difference_type = std::ptrdiff_t;
+		using pointer = T*;
+		using reference = T&;
+
 		class CodePointWrapper {
 			const utf8Itterator& owner;
 			size_t pos;

@@ -54,7 +54,7 @@ namespace dl {
 			std::span<std::byte> bytes = _bytes;
 
 			for(size_t i = 0; i < size; i++) {
-				out[i] = std::move(from_bytes<T>(bytes)); // TODO: Should this move or copy?
+				out[i] = std::move(std::from_bytes<T>(bytes)); // TODO: Should this move or copy?
 				bytes = std::span{bytes.data() + sizeof(T), bytes.size() - sizeof(T)};
 			}
 
@@ -114,13 +114,13 @@ namespace dl {
 		inline auto as_writable_bytes(std::vector<T>& data) const = delete;
 
 		static inline auto from_bytes(const std::span<std::byte> _bytes) {
-			size_t size = from_bytes<size_t>(_bytes);
+			size_t size = std::from_bytes<size_t>(_bytes);
 			vector out;
 			out.reserve(size);
 
 			auto bytes = std::span{_bytes.data() + sizeof(size_t), _bytes.size() - sizeof(size_t)};
 			for(size_t i = 0; i < size; i++) {
-				out.emplace_back(std::move(from_bytes<T>(bytes))); // TODO: Should this move or copy?
+				out.emplace_back(std::move(std::from_bytes<T>(bytes))); // TODO: Should this move or copy?
 				bytes = std::span{bytes.data() + sizeof(T), bytes.size() - sizeof(T)};
 			}
 

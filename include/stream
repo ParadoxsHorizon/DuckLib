@@ -4,8 +4,13 @@
 #include <iomanip>
 #include "rang.hpp"
 #include "dl/concepts"
-#include <source_location>
 #include "Demangle.h"
+
+#if __has_include(<experimental/source_location>)
+#include <experimental/source_location>
+#else
+#include <source_location>
+#endif
 
 namespace std::term {
 	// Pull the termcolor namespace into std::termcolor
@@ -22,7 +27,12 @@ namespace std::term {
 
 	namespace detail {
 		struct location_wrapper {
+
+	#if __has_include(<experimental/source_location>)
+			using sl = std::experimental::source_location;
+	#else
 			using sl = std::source_location;
+	#endif
 			sl location;
 
 			constexpr location_wrapper(sl location = sl::current()) : location(location) {}

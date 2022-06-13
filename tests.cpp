@@ -17,8 +17,8 @@ using namespace dl::literals;
 
 TEST_CASE("Type Demangling") {
 	CHECK( std::demangle(typeid(int)) == "int");
-	CHECK( std::demangle(typeid(std::stacktrace)) == "std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > (backward::Printer, backward::StackTrace)");
-	CHECK( std::demangle(typeid(std::cout)) == "std::__1::basic_ostream<char, std::__1::char_traits<char> >");
+	CHECK( std::demangle(typeid(std::stacktrace)) == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > (backward::Printer, backward::StackTrace)");
+	CHECK( std::demangle(typeid(std::cout)) == "std::ostream");
 }
 
 TEST_CASE("Terminal colors") {
@@ -137,6 +137,13 @@ TEST_CASE("String Properties") {
 
 	s = "    		";
 	CHECK( s.trim().empty() == true );
+
+	s = "20";
+	CHECK( s.natural_less("2") == true );
+	CHECK( s.natural_greater("3") == false );
+	CHECK( s.natural_greater("30") == true );
+	CHECK( s.natural_equal("20") == true );
+	CHECK( s.natural_equal("30") == false );
 
 	string::view sv = "こんにちは世界"sv;
 	auto u8iter = sv.begin(std::utf8);
@@ -792,7 +799,7 @@ TEST_CASE( "Delegate" ) {
 
 	CHECK( s(MaximumBehavior{}, 3, 5) == 15 );
 
-	s -= productDelegate;
+	s -= productDelegate; // TODO: Removal isn't working!
 
 	CHECK( s(MaximumBehavior{}, 3, 5) == 8 );
 	CHECK( s(MinimumBehavior{}, 3, 5) == -5 );
