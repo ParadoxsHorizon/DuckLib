@@ -816,6 +816,43 @@ TEST_CASE( "Delegate" ) {
 	};
 }
 
+TEST_CASE( "ValueDelegate" ) {
+	std::value_delegate<int> i = 0;
+	bool first = true;
+	i.on_change() = [&first](int old, int new_) {
+		// std::cout << old << " -> " << new_ << std::endl;
+		if(first) {
+			CHECK(old == 0);
+			CHECK(new_ == 5);
+			first = false;
+		} else {
+			CHECK(old == 5);
+			CHECK(new_ == 27);
+		}
+	};
+
+	i = 5;
+	CHECK( i == 5 );
+	i = 27;
+	CHECK( i == 27 );
+
+	std::value_delegate<array<int, 2>> a = array<int, 2>{7, 4};
+	a.on_change() = [](auto& old, auto& new_) {
+		// std::cout << old[0] << " -> " << new_[0] << std::endl;
+		CHECK( (old)[0] == 7 );
+		CHECK( (old)[1] == 4 );
+		CHECK( (new_)[0] == 4 );
+		CHECK( (new_)[1] == 7 );
+	};
+
+	{
+		auto r = a.record_changes();
+		std::ranges::sort(*r);
+	}
+	CHECK( (*a)[0] == 4 );
+	CHECK( (*a)[1] == 7 );
+}
+
 // TEST_CASE( "Binary Transformation" ) {
 // 	float f = 5;
 // 	double d = 7;

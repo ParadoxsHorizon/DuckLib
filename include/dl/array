@@ -20,8 +20,12 @@ namespace dl {
 		static constexpr size_t extent = size;
 
 		// Constructor which initializes the array with the given value
+		template<typename... Elems>
+		constexpr array(Elems... elems) : legacy({std::forward<Elems>(elems)...}) {}
 		constexpr array(const T& default_) : legacy(fillInitialize(default_)) {}
-		constexpr array(const T&& default_) : array(default_) {}
+		constexpr array(T&& default_) : array(default_) {}
+		template<size_t spanSize>
+		constexpr array(const std::span<T, spanSize> span) : legacy(spanInitialize(span)) {}
 
 		// Function whichs finds an element in the array
 		constexpr auto find(const T& needle) const {
@@ -70,6 +74,19 @@ namespace dl {
 			};
 
 			return arrayGenerator(value, std::make_index_sequence<size>{});
+		}
+
+		// Function which initializes an std::array filled with the values coppied from a span
+		template<size_t spanSize>
+		constexpr static legacy spanInitialize(const std::span<T, spanSize> span) requires(spanSize >= size) {	
+			constexpr auto arrayGenerator = []<size_t... I>(const std::span<T, spanSize> span, std::integer_sequence<size_t, I...> s) {
+				constexpr auto fillGenerator = [](size_t i, const std::span<T, spanSize> span) { return span[i]; };
+				return std::array<T, sizeof...(I)> { fillGenerator(I, span)... };
+			};
+
+			if constexpr(spanSize == std::dynamic_extent)
+				if(span.size() < size) throw std::invalid_argument("Attempted to intialize an array with a smaller span");
+			return arrayGenerator(span, std::make_index_sequence<size>{});
 		}
 	};
 

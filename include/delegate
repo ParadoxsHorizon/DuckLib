@@ -446,6 +446,70 @@ namespace std {
 			Base::clearCallbacks();
 		}
 	};
+
+	// A wrapper class that invokes a delegate whenever the stored value changes
+	template <typename T>
+	class value_delegate : delegate<void(const T&, T&)> {
+		using Base = delegate<void(const T&, T&)>;
+		T data;
+	public:
+		value_delegate() requires(std::is_default_constructible_v<T>) {}
+		value_delegate(const T& data) : data(data) {}
+		value_delegate(T&& data) : data(std::move(data)) {}
+
+		value_delegate& operator=(const T& data) {
+			on_change()(this->data, data);
+			this->data = data;
+			return *this;
+		}
+		value_delegate& operator=(T&& data){
+			on_change()(this->data, data);
+			this->data = std::move(data);
+			return *this;
+		}
+
+		Base& on_change() { return *this; }
+
+		operator T() { return data; }
+		operator const T() const { return data; }
+		T& operator*() { return data; }
+		const T& operator*() const { return data; }
+
+		// Function that returns a handle with the current state of the managed variable saved
+		auto record_changes() { return ChangeWrapper(*this); }
+		const auto record_changes() const { return ChangeWrapper(*this); }
+		auto operator->() { return ChangeWrapper(*this); }
+		const auto operator->() const { return ChangeWrapper(*this); }
+
+	protected:
+		struct ChangeWrapper {
+			value_delegate& owner;
+			dl::builtin::array<std::byte, sizeof(T)> oldState;
+
+			ChangeWrapper(value_delegate& owner) : owner(owner), oldState(std::span<std::byte, sizeof(T)>((std::byte*)&owner.data, sizeof(T))) {}
+			~ChangeWrapper() {
+				auto newState = std::span<std::byte>((std::byte*)&owner.data, sizeof(T));
+				for(size_t i = 0; i < sizeof(oldState); i++)
+					if(oldState[i] != newState[i]){
+						owner.on_change()(reference_cast<T>(oldState), owner.data);
+						return;
+					}
+			}
+			ChangeWrapper(ChangeWrapper&&) = default;
+			ChangeWrapper& operator=(ChangeWrapper&&) = default;
+
+			ChangeWrapper& operator=(const T& copy) { owner.data = copy; }
+			ChangeWrapper& operator=(T&& move) { owner.data = std::move(move); }
+
+			operator T() { return owner.data; }
+			operator const T() const { return owner.data; }
+			
+			T& operator*() { return owner.data; }
+			const T& operator*() const { return owner.data; }
+			T* operator->() { return &owner.data; }
+			const T* operator->() const { return &owner.data; }
+		};
+	};
 }
 
 #endif // ___DUCKED_C_DELEGATE_HPP___
