@@ -4,7 +4,6 @@
 #include <boost/predef.h>
 #include "Demangle.h"
 #include "number"
-#include "pointer"
 #include "dl/array"
 #include "dl/concepts"
 #include "dl/string"

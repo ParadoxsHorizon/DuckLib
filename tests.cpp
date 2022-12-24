@@ -1,7 +1,6 @@
 #define TESTING_DEFINE_MAIN // generate a main function to run the tests
 #include <ducklib>
 #include <testing>
-#include <stream>
 #include <stacktrace>
 
 using namespace dl::builtin;
@@ -19,15 +18,6 @@ TEST_CASE("Type Demangling") {
 	CHECK( std::demangle(typeid(int)) == "int");
 	CHECK( std::demangle(typeid(std::stacktrace)) == "std::basic_stacktrace<std::allocator<std::stacktrace_entry> >");
 	CHECK( std::demangle(typeid(std::cout)) == "std::ostream");
-}
-
-TEST_CASE("Terminal colors") {
-	std::cout << std::term::info{} << "Hello World!" << std::term::style::reset << std::endl;
-	std::cout << std::term::warning{} << "Hello World!" << std::term::style::reset << std::endl;
-	std::cout << std::term::error{} << "Hello World!" << std::term::style::reset << std::endl;
-	std::cout << std::term::fatal{} << "Hello World!" << std::term::style::reset << std::endl;
-	std::cout << std::term::debug{} << "Hello World!" << std::term::style::reset << std::endl;
-	std::cout << std::term::fg::red << "Hello World!" << std::term::style::reset << std::endl;
 }
 
 TEST_CASE("Extended size types") {
@@ -198,84 +188,6 @@ TEST_CASE( "Endians" ) {
 			std::swap_endian((u64) 0xffffffff00000000)
 		);
 	};
-}
-
-
-// --- POINTERS ----
-
-
-
-TEST_CASE( "Relative Pointers" ) {
-	char here = 'a';
-	std::relative_ptr<char, i8> ptr = &here;
-
-	CHECK( &here == ptr.data() );
-	CHECK( sizeof(ptr) == sizeof(i8) );
-
-	CHECK( *(&here) == *ptr );
-}
-
-TEST_CASE( "Based Pointers" ) {
-	char here = 'a';
-	std::based_ptr<char, i8> ptr = &here;
-
-	CHECK( &here == ptr.data() );
-	CHECK( sizeof(ptr) == std::bit_ceil(sizeof(i8) + sizeof(void*)) );
-
-	CHECK( *(&here) == *ptr );
-
-	ptr.set_base(&here - 20);
-	CHECK( &here == ptr.data() );
-}
-
-TEST_CASE( "Nonnull Pointers" ) {
-	char here = 'a';
-	std::not_null<char*> ptr = &here;
-
-	CHECK( &here == ptr );
-	CHECK( *(&here) == *ptr );
-
-	bool except = false;
-	try {
-		char* n = nullptr;
-		ptr = n;
-	} catch(std::invalid_argument&) {
-		except = true;
-	}
-	CHECK( except == true);
-}
-
-TEST_CASE( "Observable Pointers" ) {
-	// Non-owning pointer that will outlive the object
-    std::observer_ptr<std::string> obs_ptr;
-
-    {
-        // Sealed (unique) pointer that owns the object
-        auto owner_ptr = std::make_observable_sealed<std::string>("hello");
-
-        // A sealed pointer cannot be copied but it can be moved
-        // auto tmp_copied = owner_ptr; // error!
-        // auto tmp_moved = std::move(owner_ptr); // OK
-
-        // Make the observer pointer point to the object
-        obs_ptr = owner_ptr;
-
-        // The observer pointer is now valid
-        CHECK(obs_ptr.expired() == false);
-
-        // It can be used like a regular raw pointer
-        CHECK(obs_ptr != nullptr);
-        std::cout << *obs_ptr << std::endl;
-
-        // An observer pointer can be copied and moved
-        // auto tmp_copied = obs_ptr; // OK
-        // auto tmp_moved = std::move(obs_ptr); // OK
-    }
-
-    // The sealed pointer has gone out of scope, the object is deleted,
-    // the observer pointer is now null.
-    CHECK(obs_ptr.expired() == true);
-    CHECK(obs_ptr == nullptr);
 }
 
 
