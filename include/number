@@ -16,14 +16,31 @@ namespace std {
 	};
 
 	template <has_numeric_limits T>
+	class numeric_limits_wrapper;
+
+	template <typename>
+	struct is_numeric_limits_wrapper : public std::false_type { };
+
+	template <typename T>
+	struct is_numeric_limits_wrapper<numeric_limits_wrapper<T>> : public std::true_type { };
+
+	template<typename T>
+	concept has_numeric_limits_not_wrapper = has_numeric_limits<T> && !is_numeric_limits_wrapper<T>::value;
+
+
+	template <has_numeric_limits T>
 	class numeric_limits_wrapper {
 		T value;
 	public:
-		template<has_numeric_limits To>
-		constexpr numeric_limits_wrapper(To value) : value(value) {}
+		constexpr numeric_limits_wrapper() = default;
 
-		// operator T() { return value; }
-		template<has_numeric_limits To> constexpr inline operator To() const { return value; }
+		template<has_numeric_limits_not_wrapper To>
+		constexpr numeric_limits_wrapper(To value) : value(value) {}
+		template<has_numeric_limits_not_wrapper To>
+		constexpr numeric_limits_wrapper(numeric_limits_wrapper<To> o) : value(o.value) {}
+
+		operator T() { return value; }
+		// template<has_numeric_limits To> constexpr inline operator To() const { return value; }
 
 		// Numeric Limits Wrappers
 		static constexpr bool is_signed = std::numeric_limits<T>::is_signed;
@@ -60,24 +77,42 @@ namespace std {
 		static constexpr T signaling_nan = std::numeric_limits<T>::signaling_NaN();
 		static constexpr T denorm_min = std::numeric_limits<T>::denorm_min();
 
-		// Operator wrappers
-		template<has_numeric_limits To> inline numeric_limits_wrapper& operator+=(To other) { value += other; return *this; }
-		template<has_numeric_limits To> inline numeric_limits_wrapper& operator-=(To other) { value -= other; return *this; }
-		template<has_numeric_limits To> inline numeric_limits_wrapper& operator*=(To other) { value *= other; return *this; }
-		template<has_numeric_limits To> inline numeric_limits_wrapper& operator/=(To other) { value /= other; return *this; }
-		template<has_numeric_limits To> inline numeric_limits_wrapper& operator%=(To other) { value %= other; return *this; }
+		// Base Type Operator wrappers
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator+=(To other) { value += other; return *this; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator-=(To other) { value -= other; return *this; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator*=(To other) { value *= other; return *this; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator/=(To other) { value /= other; return *this; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator%=(To other) { value %= other; return *this; }
 
-		template<has_numeric_limits To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator+(To other) const { return value + other; }
-		template<has_numeric_limits To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator-(To other) const { return value - other; }
-		template<has_numeric_limits To> constexpr inline numeric_limits_wrapper							   operator-()		   const { return -value; }
-		template<has_numeric_limits To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator*(To other) const { return value * other; }
-		template<has_numeric_limits To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator/(To other) const { return value / other; }
-		template<has_numeric_limits To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator%(To other) const { return value % other; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator+(To other) const { return value + other; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator-(To other) const { return value - other; }
+		// template<has_numeric_limits To> constexpr inline numeric_limits_wrapper							   operator-()		   const { return -value; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator*(To other) const { return value * other; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator/(To other) const { return value / other; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator%(To other) const { return value % other; }
 
-		template<has_numeric_limits To> constexpr inline auto operator <=>(To other) const { return value <=> other; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline auto operator <=>(To other) const { return value <=> other; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline bool operator ==(To other) const { return value == other; }
+
+		// Wrapped Type Operator wrappers
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator+=(numeric_limits_wrapper<To> other) { value += other.value; return *this; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator-=(numeric_limits_wrapper<To> other) { value -= other.value; return *this; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator*=(numeric_limits_wrapper<To> other) { value *= other.value; return *this; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator/=(numeric_limits_wrapper<To> other) { value /= other.value; return *this; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper& operator%=(numeric_limits_wrapper<To> other) { value %= other.value; return *this; }
+
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator+(numeric_limits_wrapper<To> other) const { return value + other.value; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator-(numeric_limits_wrapper<To> other) const { return value - other.value; }
+		constexpr inline numeric_limits_wrapper							   operator-()		   const { return -value; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator*(numeric_limits_wrapper<To> other) const { return value * other.value; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator/(numeric_limits_wrapper<To> other) const { return value / other.value; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline numeric_limits_wrapper<std::common_type_t<T, To>> operator%(numeric_limits_wrapper<To> other) const { return value % other.value; }
+
+		template<has_numeric_limits_not_wrapper To> constexpr inline auto operator <=>(numeric_limits_wrapper<To> other) const { return value <=> other.value; }
+		template<has_numeric_limits_not_wrapper To> constexpr inline auto operator ==(numeric_limits_wrapper<To> other) const { return value == other.value; }
 	};
 
-	template <has_numeric_limits T>
+	template <has_numeric_limits_not_wrapper T>
 	struct numeric_limits<numeric_limits_wrapper<T>> : public numeric_limits<T> {};
 }
 
@@ -87,136 +122,137 @@ namespace dl::builtin {
 	// Arbitrary precision int
 	typedef boost::multiprecision::cpp_int int_arbitrary;
 	typedef boost::multiprecision::cpp_int iarb;
-	// Integer Type Defines
-	typedef int8_t i8;
-	typedef int16_t i16;
-	typedef int32_t i32;
-	typedef int64_t i64;
-	typedef boost::multiprecision::int128_t i128;
-	typedef boost::multiprecision::int256_t i256;
-	typedef boost::multiprecision::int512_t i512;
-	typedef boost::multiprecision::int1024_t i1024;
-	typedef uint8_t u8;
-	typedef uint16_t u16;
-	typedef uint32_t u32;
-	typedef uint64_t u64;
-	typedef boost::multiprecision::uint128_t u128;
-	typedef boost::multiprecision::uint256_t u256;
-	typedef boost::multiprecision::uint512_t u512;
-	typedef boost::multiprecision::uint1024_t u1024;
-	// Fast types
-	typedef int_fast8_t i8f;
-	typedef int_fast16_t i16f;
-	typedef int_fast32_t i32f;
-	typedef int_fast64_t i64f;
-	typedef i128 i128f;
-	typedef i256 i256f;
-	typedef i512 i512f;
-	typedef i1024 i1024f;
-	typedef uint_fast8_t u8f;
-	typedef uint_fast16_t u16f;
-	typedef uint_fast32_t u32f;
-	typedef uint_fast64_t u64f;
-	typedef u128 u128f;
-	typedef u256 u256f;
-	typedef u512 u512f;
-	typedef u1024 u1024f;
-	// Safe types
-	typedef boost::safe_numerics::safe<int> int_safe;
-	typedef boost::safe_numerics::safe<int> ints;
+	// Raw Integer Type Defines
+	typedef int8_t i8r;
+	typedef int16_t i16r;
+	typedef int32_t i32r;
+	typedef int64_t i64r;
+	typedef boost::multiprecision::int128_t i128r;
+	typedef boost::multiprecision::int256_t i256r;
+	typedef boost::multiprecision::int512_t i512r;
+	typedef boost::multiprecision::int1024_t i1024r;
+	typedef uint8_t u8r;
+	typedef uint16_t u16r;
+	typedef uint32_t u32r;
+	typedef uint64_t u64r;
+	typedef boost::multiprecision::uint128_t u128r;
+	typedef boost::multiprecision::uint256_t u256r;
+	typedef boost::multiprecision::uint512_t u512r;
+	typedef boost::multiprecision::uint1024_t u1024r;
+	// Raw Fast types
+	typedef int_fast8_t i8fr;
+	typedef int_fast16_t i16fr;
+	typedef int_fast32_t i32fr;
+	typedef int_fast64_t i64fr;
+	typedef i128r i128fr;
+	typedef i256r i256fr;
+	typedef i512r i512fr;
+	typedef i1024r i1024fr;
+	typedef uint_fast8_t u8fr;
+	typedef uint_fast16_t u16fr;
+	typedef uint_fast32_t u32fr;
+	typedef uint_fast64_t u64fr;
+	typedef u128r u128fr;
+	typedef u256r u256fr;
+	typedef u512r u512fr;
+	typedef u1024r u1024fr;
+	// Raw Safe types
+	typedef boost::safe_numerics::safe<int> intsr;
 	typedef boost::multiprecision::checked_cpp_rational rational_safe;
 	typedef boost::multiprecision::checked_cpp_rational rationals;
 	typedef boost::multiprecision::checked_cpp_int int_arbitrary_safe;
 	typedef boost::multiprecision::checked_cpp_int iarb_safe;
 	typedef boost::multiprecision::checked_cpp_int iarbs;
-	typedef boost::safe_numerics::safe<int8_t> i8s;
-	typedef boost::safe_numerics::safe<int16_t> i16s;
-	typedef boost::safe_numerics::safe<int32_t> i32s;
-	typedef boost::safe_numerics::safe<int64_t> i64s;
-	typedef boost::multiprecision::checked_int128_t i128s;
-	typedef boost::multiprecision::checked_int256_t i256s;
-	typedef boost::multiprecision::checked_int512_t i512s;
-	typedef boost::multiprecision::checked_int1024_t i1024s;
-	typedef boost::safe_numerics::safe<uint> uint_safe;
-	typedef boost::safe_numerics::safe<uint> uints;
-	typedef boost::safe_numerics::safe<uint8_t> u8s;
-	typedef boost::safe_numerics::safe<uint16_t> u16s;
-	typedef boost::safe_numerics::safe<uint32_t> u32s;
-	typedef boost::safe_numerics::safe<uint64_t> u64s;
-	typedef boost::multiprecision::checked_uint128_t u128s;
-	typedef boost::multiprecision::checked_uint256_t u256s;
-	typedef boost::multiprecision::checked_uint512_t u512s;
-	typedef boost::multiprecision::checked_uint1024_t u1024s;
+	typedef boost::safe_numerics::safe<int8_t> i8sr;
+	typedef boost::safe_numerics::safe<int16_t> i16sr;
+	typedef boost::safe_numerics::safe<int32_t> i32sr;
+	typedef boost::safe_numerics::safe<int64_t> i64sr;
+	typedef boost::multiprecision::checked_int128_t i128sr;
+	typedef boost::multiprecision::checked_int256_t i256sr;
+	typedef boost::multiprecision::checked_int512_t i512sr;
+	typedef boost::multiprecision::checked_int1024_t i1024sr;
+	typedef boost::safe_numerics::safe<uint> uintsr;
+	typedef boost::safe_numerics::safe<uint8_t> u8sr;
+	typedef boost::safe_numerics::safe<uint16_t> u16sr;
+	typedef boost::safe_numerics::safe<uint32_t> u32sr;
+	typedef boost::safe_numerics::safe<uint64_t> u64sr;
+	typedef boost::multiprecision::checked_uint128_t u128sr;
+	typedef boost::multiprecision::checked_uint256_t u256sr;
+	typedef boost::multiprecision::checked_uint512_t u512sr;
+	typedef boost::multiprecision::checked_uint1024_t u1024sr;
 	
 	// Wrapped Integer types
 	typedef std::numeric_limits_wrapper<int> intw;
-	typedef std::numeric_limits_wrapper<i8> i8w;
-	typedef std::numeric_limits_wrapper<i16> i16w;
-	typedef std::numeric_limits_wrapper<i32> i32w;
-	typedef std::numeric_limits_wrapper<i64> i64w;
-	typedef std::numeric_limits_wrapper<i128> i128w;
-	typedef std::numeric_limits_wrapper<i256> i256w;
-	typedef std::numeric_limits_wrapper<i512> i512w;
-	typedef std::numeric_limits_wrapper<i1024> i1024w;
+	typedef std::numeric_limits_wrapper<i8r> i8;
+	typedef std::numeric_limits_wrapper<i16r> i16;
+	typedef std::numeric_limits_wrapper<i32r> i32;
+	typedef std::numeric_limits_wrapper<i64r> i64;
+	typedef std::numeric_limits_wrapper<i128r> i128;
+	typedef std::numeric_limits_wrapper<i256r> i256;
+	typedef std::numeric_limits_wrapper<i512r> i512;
+	typedef std::numeric_limits_wrapper<i1024r> i1024;
 	typedef std::numeric_limits_wrapper<uint> uintw;
-	typedef std::numeric_limits_wrapper<u8> u8w;
-	typedef std::numeric_limits_wrapper<u16> u16w;
-	typedef std::numeric_limits_wrapper<u32> u32w;
-	typedef std::numeric_limits_wrapper<u64> u64w;
-	typedef std::numeric_limits_wrapper<u128> u128w;
-	typedef std::numeric_limits_wrapper<u256> u256w;
-	typedef std::numeric_limits_wrapper<u512> u512w;
-	typedef std::numeric_limits_wrapper<u1024> u1024w;
+	typedef std::numeric_limits_wrapper<u8r> u8;
+	typedef std::numeric_limits_wrapper<u16r> u16;
+	typedef std::numeric_limits_wrapper<u32r> u32;
+	typedef std::numeric_limits_wrapper<u64r> u64;
+	typedef std::numeric_limits_wrapper<u128r> u128;
+	typedef std::numeric_limits_wrapper<u256r> u256;
+	typedef std::numeric_limits_wrapper<u512r> u512;
+	typedef std::numeric_limits_wrapper<u1024r> u1024;
 	// Fast wrapped types
-	typedef std::numeric_limits_wrapper<i8f> i8fw;
-	typedef std::numeric_limits_wrapper<i16f> i16fw;
-	typedef std::numeric_limits_wrapper<i32f> i32fw;
-	typedef std::numeric_limits_wrapper<i64f> i64fw;
-	typedef std::numeric_limits_wrapper<i128f> i128fw;
-	typedef std::numeric_limits_wrapper<i256f> i256fw;
-	typedef std::numeric_limits_wrapper<i512f> i512fw;
-	typedef std::numeric_limits_wrapper<i1024f> i1024fw;
-	typedef std::numeric_limits_wrapper<u8f> u8fw;
-	typedef std::numeric_limits_wrapper<u16f> u16fw;
-	typedef std::numeric_limits_wrapper<u32f> u32fw;
-	typedef std::numeric_limits_wrapper<u64f> u64fw;
-	typedef std::numeric_limits_wrapper<u128f> u128fw;
-	typedef std::numeric_limits_wrapper<u256f> u256fw;
-	typedef std::numeric_limits_wrapper<u512f> u512fw;
-	typedef std::numeric_limits_wrapper<u1024f> u1024fw;
+	typedef std::numeric_limits_wrapper<i8fr> i8f;
+	typedef std::numeric_limits_wrapper<i16fr> i16f;
+	typedef std::numeric_limits_wrapper<i32fr> i32f;
+	typedef std::numeric_limits_wrapper<i64fr> i64f;
+	typedef std::numeric_limits_wrapper<i128fr> i128f;
+	typedef std::numeric_limits_wrapper<i256fr> i256f;
+	typedef std::numeric_limits_wrapper<i512fr> i512f;
+	typedef std::numeric_limits_wrapper<i1024fr> i1024f;
+	typedef std::numeric_limits_wrapper<u8fr> u8f;
+	typedef std::numeric_limits_wrapper<u16fr> u16f;
+	typedef std::numeric_limits_wrapper<u32fr> u32f;
+	typedef std::numeric_limits_wrapper<u64fr> u64f;
+	typedef std::numeric_limits_wrapper<u128fr> u128f;
+	typedef std::numeric_limits_wrapper<u256fr> u256f;
+	typedef std::numeric_limits_wrapper<u512fr> u512f;
+	typedef std::numeric_limits_wrapper<u1024fr> u1024f;
 	// Safe wrapped types
-	typedef std::numeric_limits_wrapper<ints> intsw;
-	typedef std::numeric_limits_wrapper<i8s> i8sw;
-	typedef std::numeric_limits_wrapper<i16s> i16sw;
-	typedef std::numeric_limits_wrapper<i32s> i32sw;
-	typedef std::numeric_limits_wrapper<i64s> i64sw;
-	typedef std::numeric_limits_wrapper<i128s> i128sw;
-	typedef std::numeric_limits_wrapper<i256s> i256sw;
-	typedef std::numeric_limits_wrapper<i512s> i512sw;
-	typedef std::numeric_limits_wrapper<i1024s> i1024sw;
-	typedef std::numeric_limits_wrapper<uints> uintsw;
-	typedef std::numeric_limits_wrapper<u8s> u8sw;
-	typedef std::numeric_limits_wrapper<u16s> u16sw;
-	typedef std::numeric_limits_wrapper<u32s> u32sw;
-	typedef std::numeric_limits_wrapper<u64s> u64sw;
-	typedef std::numeric_limits_wrapper<u128s> u128sw;
-	typedef std::numeric_limits_wrapper<u256s> u256sw;
-	typedef std::numeric_limits_wrapper<u512s> u512sw;
-	typedef std::numeric_limits_wrapper<u1024s> u1024sw;
+	typedef std::numeric_limits_wrapper<intsr> ints;
+	typedef ints int_safe;
+	typedef std::numeric_limits_wrapper<i8sr> i8s;
+	typedef std::numeric_limits_wrapper<i16sr> i16s;
+	typedef std::numeric_limits_wrapper<i32sr> i32s;
+	typedef std::numeric_limits_wrapper<i64sr> i64s;
+	typedef std::numeric_limits_wrapper<i128sr> i128s;
+	typedef std::numeric_limits_wrapper<i256sr> i256s;
+	typedef std::numeric_limits_wrapper<i512sr> i512s;
+	typedef std::numeric_limits_wrapper<i1024sr> i1024s;
+	typedef std::numeric_limits_wrapper<uintsr> uints;
+	typedef uints uint_safe;
+	typedef std::numeric_limits_wrapper<u8sr> u8s;
+	typedef std::numeric_limits_wrapper<u16sr> u16s;
+	typedef std::numeric_limits_wrapper<u32sr> u32s;
+	typedef std::numeric_limits_wrapper<u64sr> u64s;
+	typedef std::numeric_limits_wrapper<u128sr> u128s;
+	typedef std::numeric_limits_wrapper<u256sr> u256s;
+	typedef std::numeric_limits_wrapper<u512sr> u512s;
+	typedef std::numeric_limits_wrapper<u1024sr> u1024s;
 	
-	// Float Type Defines
-	typedef half_float::half f16;
-	typedef float f32;
-	typedef double f64;
+	// Raw Float Type Defines
+	typedef half_float::half half;
+	typedef half f16r;
+	typedef float f32r;
+	typedef double f64r;
 	typedef boost::multiprecision::cpp_bin_float_quad f128; // Note: not the same size or bitlayout as IEEE floating point quad
 	typedef boost::multiprecision::cpp_bin_float_oct f256; // Note: not the same size or bitlayout as IEEE floating point oct
 	// Wrapped float
-	typedef std::numeric_limits_wrapper<f16> halfw;
+	typedef std::numeric_limits_wrapper<half> halfw;
 	typedef std::numeric_limits_wrapper<float> floatw;
 	typedef std::numeric_limits_wrapper<double> doublew;
-	typedef std::numeric_limits_wrapper<f16> f16w;
-	typedef std::numeric_limits_wrapper<f32> f32w;
-	typedef std::numeric_limits_wrapper<f64> f64w;
+	typedef std::numeric_limits_wrapper<half> f16;
+	typedef std::numeric_limits_wrapper<f32r> f32;
+	typedef std::numeric_limits_wrapper<f64r> f64;
 	// typedef std::numeric_limits_wrapper<f128> f128w;
 	// typedef std::numeric_limits_wrapper<f256> f256w;
 }
@@ -228,162 +264,162 @@ namespace std::rational {
 
 namespace dl::literals {
 // TODO: Extend extended literals to support decimal, binary, and octal in addition to hex
-#define DL_DEFINE_EXTENDED_LITERALS(Bits) \
-	template <char... STR> \
-	constexpr BOOST_JOIN(dl::builtin::i, Bits) operator"" BOOST_JOIN(_i, Bits)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(dl::builtin::u, Bits) operator"" BOOST_JOIN(_u, Bits)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), w) operator"" BOOST_JOIN(BOOST_JOIN(_i, Bits), w)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), w) operator"" BOOST_JOIN(BOOST_JOIN(_u, Bits), w)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), f) operator"" BOOST_JOIN(BOOST_JOIN(_i, Bits), f)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), f) operator"" BOOST_JOIN(BOOST_JOIN(_u, Bits), f)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), fw) operator"" BOOST_JOIN(BOOST_JOIN(_i, Bits), fw)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), fw) operator"" BOOST_JOIN(BOOST_JOIN(_u, Bits), fw)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), s) operator"" BOOST_JOIN(BOOST_JOIN(_i, Bits), s)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::checked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), s) operator"" BOOST_JOIN(BOOST_JOIN(_u, Bits), s)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::checked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), sw) operator"" BOOST_JOIN(BOOST_JOIN(_i, Bits), sw)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::checked, void> >::value; \
-	} \
-	template <char... STR> \
-	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), sw) operator"" BOOST_JOIN(BOOST_JOIN(_u, Bits), sw)() { \
-		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
-		return boost::multiprecision::literals::detail::make_backend_from_pack< \
-			pt, \
-			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::checked, void> >::value; \
-	}	
+// #define DL_DEFINE_EXTENDED_LITERALS(Bits) \
+// 	template <char... STR> \
+// 	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), r) operator"" BOOST_JOIN(BOOST_JOIN(i, Bits), r)() { \
+// 		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+// 		return boost::multiprecision::literals::detail::make_backend_from_pack< \
+// 			pt, \
+// 			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void> >::value; \
+// 	} \
+// 	template <char... STR> \
+// 	constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), r) operator"" BOOST_JOIN(BOOST_JOIN(u, Bits), r)() { \
+// 		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+// 		return boost::multiprecision::literals::detail::make_backend_from_pack< \
+// 			pt, \
+// 			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >::value; \
+// 	} \
+// 	template <char... STR> \
+// 	constexpr BOOST_JOIN(dl::builtin::i, Bits) operator"" BOOST_JOIN(i, Bits)() { \
+// 		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+// 		return boost::multiprecision::literals::detail::make_backend_from_pack< \
+// 			pt, \
+// 			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void> >::value; \
+// 	} \
+// 	template <char... STR> \
+// 	constexpr BOOST_JOIN(dl::builtin::u, Bits) operator"" BOOST_JOIN(u, Bits)() { \
+// 		using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+// 		return boost::multiprecision::literals::detail::make_backend_from_pack< \
+// 			pt, \
+// 			boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >::value; \
+// 	} \
+	// template <char... STR> \
+	// constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), fr) operator"" BOOST_JOIN(BOOST_JOIN(i, Bits), fr)() { \
+	// 	using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+	// 	return boost::multiprecision::literals::detail::make_backend_from_pack< \
+	// 		pt, \
+	// 		boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void> >::value; \
+	// } \
+	// template <char... STR> \
+	// constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), fr) operator"" BOOST_JOIN(BOOST_JOIN(u, Bits), fr)() { \
+	// 	using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+	// 	return boost::multiprecision::literals::detail::make_backend_from_pack< \
+	// 		pt, \
+	// 		boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >::value; \
+	// } \
+	// template <char... STR> \
+	// constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), f) operator"" BOOST_JOIN(BOOST_JOIN(i, Bits), f)() { \
+	// 	using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+	// 	return boost::multiprecision::literals::detail::make_backend_from_pack< \
+	// 		pt, \
+	// 		boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void> >::value; \
+	// } \
+	// template <char... STR> \
+	// constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), f) operator"" BOOST_JOIN(BOOST_JOIN(u, Bits), f)() { \
+	// 	using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+	// 	return boost::multiprecision::literals::detail::make_backend_from_pack< \
+	// 		pt, \
+	// 		boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >::value; \
+	// } \
+	// template <char... STR> \
+	// constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), sr) operator"" BOOST_JOIN(BOOST_JOIN(i, Bits), sr)() { \
+	// 	using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+	// 	return boost::multiprecision::literals::detail::make_backend_from_pack< \
+	// 		pt, \
+	// 		boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::checked, void> >::value; \
+	// } \
+	// template <char... STR> \
+	// constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), sr) operator"" BOOST_JOIN(BOOST_JOIN(u, Bits), sr)() { \
+	// 	using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+	// 	return boost::multiprecision::literals::detail::make_backend_from_pack< \
+	// 		pt, \
+	// 		boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::checked, void> >::value; \
+	// } \
+	// template <char... STR> \
+	// constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::i, Bits), s) operator"" BOOST_JOIN(BOOST_JOIN(i, Bits), s)() { \
+	// 	using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+	// 	return boost::multiprecision::literals::detail::make_backend_from_pack< \
+	// 		pt, \
+	// 		boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::checked, void> >::value; \
+	// } \
+	// template <char... STR> \
+	// constexpr BOOST_JOIN(BOOST_JOIN(dl::builtin::u, Bits), s) operator"" BOOST_JOIN(BOOST_JOIN(u, Bits), s)() { \
+	// 	using pt = typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type; \
+	// 	return boost::multiprecision::literals::detail::make_backend_from_pack< \
+	// 		pt, \
+	// 		boost::multiprecision::backends::cpp_int_backend<Bits, Bits, boost::multiprecision::unsigned_magnitude, boost::multiprecision::checked, void> >::value; \
+	// }	
 
 
 	// Numeric literals
-	constexpr dl::builtin::i8     operator"" _i8    (unsigned long long x) { return x; }
-	constexpr dl::builtin::i16    operator"" _i16   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i32    operator"" _i32   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i64    operator"" _i64   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u8     operator"" _u8    (unsigned long long x) { return x; }
-	constexpr dl::builtin::u16    operator"" _u16   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u32    operator"" _u32   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u64    operator"" _u64   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i8f    operator"" _i8f   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i16f   operator"" _i16f  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i32f   operator"" _i32f  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i64f   operator"" _i64f  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u8f    operator"" _u8f   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u16f   operator"" _u16f  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u32f   operator"" _u32f  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u64f   operator"" _u64f  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i8s    operator"" _i8s   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i16s   operator"" _i16s  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i32s   operator"" _i32s  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i64s   operator"" _i64s  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u8s    operator"" _u8s   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u16s   operator"" _u16s  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u32s   operator"" _u32s  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u64s   operator"" _u64s  (unsigned long long x) { return x; }
-	// Wrapped
-	constexpr dl::builtin::i8w     operator"" _i8w    (unsigned long long x) { return x; }
-	constexpr dl::builtin::i16w    operator"" _i16w   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i32w    operator"" _i32w   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i64w    operator"" _i64w   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u8w     operator"" _u8w    (unsigned long long x) { return x; }
-	constexpr dl::builtin::u16w    operator"" _u16w   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u32w    operator"" _u32w   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u64w    operator"" _u64w   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i8fw    operator"" _i8fw   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i16fw   operator"" _i16fw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i32fw   operator"" _i32fw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i64fw   operator"" _i64fw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u8fw    operator"" _u8fw   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u16fw   operator"" _u16fw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u32fw   operator"" _u32fw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u64fw   operator"" _u64fw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i8sw    operator"" _i8sw   (unsigned long long x) { return x; }
-	constexpr dl::builtin::i16sw   operator"" _i16sw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i32sw   operator"" _i32sw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::i64sw   operator"" _i64sw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u8sw    operator"" _u8sw   (unsigned long long x) { return x; }
-	constexpr dl::builtin::u16sw   operator"" _u16sw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u32sw   operator"" _u32sw  (unsigned long long x) { return x; }
-	constexpr dl::builtin::u64sw   operator"" _u64sw  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i8     operator"" i8    (unsigned long long x) { return x; }
+	constexpr dl::builtin::i16    operator"" i16   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i32    operator"" i32   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i64    operator"" i64   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u8     operator"" u8    (unsigned long long x) { return x; }
+	constexpr dl::builtin::u16    operator"" u16   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u32    operator"" u32   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u64    operator"" u64   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i8f    operator"" i8f   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i16f   operator"" i16f  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i32f   operator"" i32f  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i64f   operator"" i64f  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u8f    operator"" u8f   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u16f   operator"" u16f  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u32f   operator"" u32f  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u64f   operator"" u64f  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i8s    operator"" i8s   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i16s   operator"" i16s  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i32s   operator"" i32s  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i64s   operator"" i64s  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u8s    operator"" u8s   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u16s   operator"" u16s  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u32s   operator"" u32s  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u64s   operator"" u64s  (unsigned long long x) { return x; }
+	// Raw Numeric literals
+	constexpr dl::builtin::i8r     operator"" i8r    (unsigned long long x) { return x; }
+	constexpr dl::builtin::i16r    operator"" i16r   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i32r    operator"" i32r   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i64r    operator"" i64r   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u8r     operator"" u8r    (unsigned long long x) { return x; }
+	constexpr dl::builtin::u16r    operator"" u16r   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u32r    operator"" u32r   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u64r    operator"" u64r   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i8fr    operator"" i8fr   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i16fr   operator"" i16fr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i32fr   operator"" i32fr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i64fr   operator"" i64fr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u8fr    operator"" u8fr   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u16fr   operator"" u16fr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u32fr   operator"" u32fr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u64fr   operator"" u64fr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i8sr    operator"" i8sr   (unsigned long long x) { return x; }
+	constexpr dl::builtin::i16sr   operator"" i16sr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i32sr   operator"" i32sr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::i64sr   operator"" i64sr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u8sr    operator"" u8sr   (unsigned long long x) { return x; }
+	constexpr dl::builtin::u16sr   operator"" u16sr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u32sr   operator"" u32sr  (unsigned long long x) { return x; }
+	constexpr dl::builtin::u64sr   operator"" u64sr  (unsigned long long x) { return x; }
 	inline dl::builtin::rational operator""r (unsigned long long x) { return x; } // TODO: not working
 	// Define literals for larger extended literal types
-	DL_DEFINE_EXTENDED_LITERALS(128)
-	DL_DEFINE_EXTENDED_LITERALS(256)
-	DL_DEFINE_EXTENDED_LITERALS(512)
-	DL_DEFINE_EXTENDED_LITERALS(1024)
+	// DL_DEFINE_EXTENDED_LITERALS(128)
+	// DL_DEFINE_EXTENDED_LITERALS(256)
+	// DL_DEFINE_EXTENDED_LITERALS(512)
+	// DL_DEFINE_EXTENDED_LITERALS(1024)
 
 	// Float literals
-	inline dl::builtin::f16 operator"" _f16 (long double x) { return dl::builtin::f16(x); }
-	constexpr dl::builtin::f32 operator"" _f32 (long double x) { return x; }
-	constexpr dl::builtin::f64 operator"" _f64 (long double x) { return x; }
-	inline dl::builtin::f128 operator"" _f128(long double x) { return x; }
-	inline dl::builtin::f256 operator"" _f256(long double x) { return x; }
-	// Wrapped
-	inline dl::builtin::f16w operator"" _f16w (long double x) { return dl::builtin::f16(x); }
-	constexpr dl::builtin::f32w operator"" _f32w (long double x) { return x; }
-	constexpr dl::builtin::f64w operator"" _f64w (long double x) { return x; }
-	// dl::builtin::f128w operator"" _f128w(long double x) { return x; }
-	// dl::builtin::f256w operator"" _f256w(long double x) { return x; }
+	inline dl::builtin::f16 operator"" f16 (long double x) { return dl::builtin::f16(x); }
+	constexpr dl::builtin::f32 operator"" f32 (long double x) { return x; }
+	constexpr dl::builtin::f64 operator"" f64 (long double x) { return x; }
+	inline dl::builtin::f128 operator"" f128(long double x) { return x; }
+	inline dl::builtin::f256 operator"" f256(long double x) { return x; }
+	// Raw Float literals
+	inline dl::builtin::f16r operator"" f16r (long double x) { return dl::builtin::f16r(x); }
+	constexpr dl::builtin::f32r operator"" f32r (long double x) { return x; }
+	constexpr dl::builtin::f64r operator"" f64r (long double x) { return x; }
+	// dl::builtin::f128r operator"" f128r(long double x) { return x; }
+	// dl::builtin::f256r operator"" f256r(long double x) { return x; }
 }
 
 #endif // ___DUCKED_C_NUMBER_HPP___

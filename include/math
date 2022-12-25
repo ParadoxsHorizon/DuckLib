@@ -34,7 +34,7 @@ namespace std {
 	template<std::integral T>
 	constexpr auto wrap(T min, T max, T value) {
 		auto diff = max - min;
-		return (value - min) % diff + min;
+		return (value - min) % diff + min; // For integral types we can use modulus to make the process faster!
 	}
 
 
