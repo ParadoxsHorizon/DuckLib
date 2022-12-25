@@ -2,6 +2,7 @@
 #include <ducklib>
 #include <testing>
 #include <stacktrace>
+#include <math>
 
 using namespace dl::builtin;
 using namespace dl::literals;
@@ -38,11 +39,14 @@ TEST_CASE("Extended size types") {
 	CHECK( sizeof(u256) == 256 / 8 + 16 );   // Extended types are documented to be a word larger than they should be
 	CHECK( sizeof(u512) == 512 / 8 + 16 );   // Extended types are documented to be a word larger than they should be
 	CHECK( sizeof(u1024) == 1024 / 8 + 16 ); // Extended types are documented to be a word larger than they should be
+	CHECK( sizeof(f16)  == 16 / 8 );
 	CHECK( sizeof(f32)  == 32 / 8 );
 	CHECK( sizeof(f64)  == 64 / 8 );
 	CHECK( sizeof(f128) == 128 / 8 + 16 ); // Extended types are documented to be a word larger than they should be
 	CHECK( sizeof(f256) == 256 / 8 + 32 ); // Extended types are documented to be a word larger than they should be // TODO: Why is this two words longer?
 
+	CHECK( f16w::min == std::approx(6.10352e-05) );
+	CHECK( f16w::max == 65504 );
 	CHECK( i8w::min == -128 );
 	CHECK( i8w::max == 127 );
 	CHECK( u8w::min == 0 );
@@ -318,7 +322,8 @@ TEST_CASE( "Binary Transformation" ) {
 }
 
 
-#include <math>
+// ---- MATH ----
+
 
 TEST_CASE( "Math" ) {
 	CHECK(std::lerp(0., 5, .5) == 2.5);

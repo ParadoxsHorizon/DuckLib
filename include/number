@@ -4,6 +4,7 @@
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/safe_numerics/safe_integer.hpp>
+#include "half.hpp"
 
 #include <cstdint>
 #include <cstddef>
@@ -204,13 +205,16 @@ namespace dl::builtin {
 	typedef std::numeric_limits_wrapper<u1024s> u1024sw;
 	
 	// Float Type Defines
+	typedef half_float::half f16;
 	typedef float f32;
 	typedef double f64;
 	typedef boost::multiprecision::cpp_bin_float_quad f128; // Note: not the same size or bitlayout as IEEE floating point quad
 	typedef boost::multiprecision::cpp_bin_float_oct f256; // Note: not the same size or bitlayout as IEEE floating point oct
 	// Wrapped float
+	typedef std::numeric_limits_wrapper<f16> halfw;
 	typedef std::numeric_limits_wrapper<float> floatw;
 	typedef std::numeric_limits_wrapper<double> doublew;
+	typedef std::numeric_limits_wrapper<f16> f16w;
 	typedef std::numeric_limits_wrapper<f32> f32w;
 	typedef std::numeric_limits_wrapper<f64> f64w;
 	// typedef std::numeric_limits_wrapper<f128> f128w;
@@ -369,11 +373,13 @@ namespace dl::literals {
 	DL_DEFINE_EXTENDED_LITERALS(1024)
 
 	// Float literals
+	inline dl::builtin::f16 operator"" _f16 (long double x) { return dl::builtin::f16(x); }
 	constexpr dl::builtin::f32 operator"" _f32 (long double x) { return x; }
 	constexpr dl::builtin::f64 operator"" _f64 (long double x) { return x; }
 	inline dl::builtin::f128 operator"" _f128(long double x) { return x; }
 	inline dl::builtin::f256 operator"" _f256(long double x) { return x; }
 	// Wrapped
+	inline dl::builtin::f16w operator"" _f16w (long double x) { return dl::builtin::f16(x); }
 	constexpr dl::builtin::f32w operator"" _f32w (long double x) { return x; }
 	constexpr dl::builtin::f64w operator"" _f64w (long double x) { return x; }
 	// dl::builtin::f128w operator"" _f128w(long double x) { return x; }
