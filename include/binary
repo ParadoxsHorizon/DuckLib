@@ -24,7 +24,9 @@ namespace std {
 	} // detail
 
 	template<typename T> requires detail::has_as_bytes_function<T> inline auto as_bytes(const T& data) { return data.as_bytes(); }
-	template<typename T> requires (!detail::has_as_bytes_function<T>)
+	template<typename T> requires (!detail::has_as_bytes_function<T> && detail::has_as_writable_bytes_function<T>)
+		inline auto as_bytes(const T& data) { return data.as_writable_bytes(); }
+	template<typename T> requires (!detail::has_as_bytes_function<T> && !detail::has_as_writable_bytes_function<T>)
 	inline auto as_bytes(const T& data) {
 		const T* ptr = &data;
 		return as_bytes(std::span{ptr, 1});

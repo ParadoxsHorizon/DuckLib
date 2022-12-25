@@ -31,17 +31,15 @@ namespace std {
 			(repeater(args) && ...);
 		}
 		using namespace ankerl::nanobench;
+
+		inline void header() { dl::benchmarkTitle = "benchmark"; }
+		inline void header(const std::string title) { dl::benchmarkTitle = title; }
 	} // std::benchmark
 
 	inline namespace test {
 		using namespace doctest;
 	} // std::test
-
-	inline void benchmark_header() { dl::benchmarkTitle = "benchmark"; }
-	inline void benchmark_header(const std::string title) { dl::benchmarkTitle = title; }
 } // std
-
-// #define _BENCHMARK(name, lambda)
 
 #endif // ___DUCKED_C_TESTING_HPP___
 

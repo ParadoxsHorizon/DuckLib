@@ -618,59 +618,59 @@ namespace dl {
 		constexpr inline basic_string replace (std::modify_original_t, const_iterator i1, const_iterator i2, std::initializer_list<char> il) { return Base::replace(i1, i2, il); }
 		constexpr inline basic_string replace (std::modify_original_t, size_t pos, size_t len, const Base& str) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, pos, len, str);
+			return out.replace(std::modify_original, pos, len, str);
 		}
 		constexpr inline basic_string replace (const_iterator i1, const_iterator i2, const Base& str) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, i1, i2, str);
+			return out.replace(std::modify_original, i1, i2, str);
 		}
 		constexpr inline basic_string replace (size_t pos, size_t len, const Base& str, size_t subpos, size_t sublen = npos) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, pos, len, str, subpos, sublen);
+			return out.replace(std::modify_original, pos, len, str, subpos, sublen);
 		}
 		constexpr inline basic_string replace (size_t pos, size_t len, const view& str) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, pos, len, Base(str));
+			return out.replace(std::modify_original, pos, len, Base(str));
 		}
 		constexpr inline basic_string replace (const_iterator i1, const_iterator i2, const view& str) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, i1, i2, Base(str));
+			return out.replace(std::modify_original, i1, i2, Base(str));
 		}
 		constexpr inline basic_string replace (size_t pos, size_t len, const view& str, size_t subpos, size_t sublen = npos) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, pos, len, Base(str), subpos, sublen);
+			return out.replace(std::modify_original, pos, len, Base(str), subpos, sublen);
 		}
 		constexpr inline basic_string replace (size_t pos, size_t len, const CharType* s) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, pos, len, s);
+			return out.replace(std::modify_original, pos, len, s);
 		}
 		constexpr inline basic_string replace (const_iterator i1, const_iterator i2, const CharType* s) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, i1, i2, s);
+			return out.replace(std::modify_original, i1, i2, s);
 		}
 		constexpr inline basic_string replace (size_t pos, size_t len, const CharType* s, size_t n) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, pos, len, s, n);
+			return out.replace(std::modify_original, pos, len, s, n);
 		}
 		constexpr inline basic_string replace (const_iterator i1, const_iterator i2, const CharType* s, size_t n) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, i1, i2, s, n);
+			return out.replace(std::modify_original, i1, i2, s, n);
 		}
 		constexpr inline basic_string replace (size_t pos, size_t len, size_t n, char c) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, pos, len, n, c);
+			return out.replace(std::modify_original, pos, len, n, c);
 		}
 		constexpr inline basic_string replace (const_iterator i1, const_iterator i2, size_t n, char c) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, i1, i2, n, c);
+			return out.replace(std::modify_original, i1, i2, n, c);
 		}
 		template <class InputIterator> constexpr inline basic_string replace (const_iterator i1, const_iterator i2, InputIterator first, InputIterator last) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, i1, i2, first, last);
+			return out.replace(std::modify_original, i1, i2, first, last);
 		}
 		constexpr inline basic_string replace (const_iterator i1, const_iterator i2, std::initializer_list<char> il) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, i1, i2, il);
+			return out.replace(std::modify_original, i1, i2, il);
 		}
 
 
@@ -682,25 +682,25 @@ namespace dl {
 			pos = Base::find(toFind, pos);
 			if (pos == npos) return *this;
 
-	 		replace(std::modify_original_t{}, pos, toFind.size(), toReplace);
+	 		replace(std::modify_original, pos, toFind.size(), toReplace);
 			return *this;
 		}
 		constexpr inline basic_string replace_first(const view& toFind, const view& toReplace, size_t pos = 0) const {
 			basic_string out = *this;
-			return out.replace_first(std::modify_original_t{}, toFind, toReplace, pos);
+			return out.replace_first(std::modify_original, toFind, toReplace, pos);
 		}
 
 		constexpr basic_string& replace(std::modify_original_t, const view& toFind, const view& toReplace, size_t pos = 0, size_t maxReplacements = -1) {
 			pos = Base::find(toFind, pos);
 			for(size_t count = 0; pos != npos && count < maxReplacements; count++) {
-				replace(std::modify_original_t{}, pos, toFind.size(), toReplace);
+				replace(std::modify_original, pos, toFind.size(), toReplace);
 				pos = Base::find(toFind, pos + toReplace.size());
 			}
 			return *this;
 		}
 		constexpr inline basic_string replace(const view& toFind, const view& toReplace, size_t pos = 0, size_t maxReplacements = -1) const {
 			basic_string out = *this;
-			return out.replace(std::modify_original_t{}, toFind, toReplace, pos, maxReplacements);
+			return out.replace(std::modify_original, toFind, toReplace, pos, maxReplacements);
 		}
 
 		constexpr size_t count(const view& needle, size_t pos = 0) const {
@@ -727,7 +727,7 @@ namespace dl {
 		}
 		constexpr basic_string repeat (size_t count) const {
 			basic_string out = *this;
-			return out.repeat(std::modify_original_t{}, count);
+			return out.repeat(std::modify_original, count);
 		}
 
 		constexpr view ltrim_view (const CharType* delims = " \t\v\f\r\n") const {
@@ -777,7 +777,7 @@ namespace dl {
 		}
 		constexpr inline basic_string toupper() const {
 			basic_string out = *this;
-			return out.toupper(std::modify_original_t{});
+			return out.toupper(std::modify_original);
 		}
 
 		constexpr basic_string& tolower(std::modify_original_t) {
@@ -787,11 +787,11 @@ namespace dl {
 		}
 		constexpr inline basic_string tolower() const {
 			basic_string out = *this;
-			return out.tolower(std::modify_original_t{});
+			return out.tolower(std::modify_original);
 		}
 
 		constexpr basic_string& totitle (std::modify_original_t, const CharType* seperators = " \t\v\f\r\n") {
-			tolower(std::modify_original_t{});
+			tolower(std::modify_original);
 			for(size_t pos = Base::find_first_of(seperators); pos != npos; pos = Base::find_first_of(seperators, pos + 1))
 				if(pos + 1 < Base::size())
 					Base::operator[](pos + 1) = std::toupper((unsigned char)Base::operator[](pos + 1));
@@ -799,7 +799,7 @@ namespace dl {
 		}
 		constexpr inline basic_string totitle(const CharType* seperators = " \t\v\f\r\n") const {
 			basic_string out = *this;
-			return out.totitle(std::modify_original_t{}, seperators);
+			return out.totitle(std::modify_original, seperators);
 		}
 
 		constexpr basic_string& center (std::modify_original_t, size_t width, char fill = ' ') {
@@ -816,12 +816,12 @@ namespace dl {
 		}
 		constexpr inline basic_string center(size_t width, char fill = ' ') const {
 			basic_string out = *this;
-			return out.center(std::modify_original_t{}, width, fill);
+			return out.center(std::modify_original, width, fill);
 		}
 		constexpr basic_string center_multiline(size_t width, char fill = ' ', size_t pos = 0, size_t max_splits = -1) const {
 			std::vector<basic_string> splits = Ext::split("\r\n", pos, max_splits);
 			basic_string out;
-			for(basic_string& str: splits) out += str.center(std::modify_original_t{}, width, fill) + '\n';
+			for(basic_string& str: splits) out += str.center(std::modify_original, width, fill) + '\n';
 			return out;
 		}
 
@@ -835,12 +835,12 @@ namespace dl {
 		}
 		constexpr inline basic_string left(size_t width, char fill = ' ') const {
 			basic_string out = *this;
-			return out.left(std::modify_original_t{}, width, fill);
+			return out.left(std::modify_original, width, fill);
 		}
 		constexpr basic_string left_multiline(size_t width, char fill = ' ', size_t pos = 0, size_t max_splits = -1) const {
 			std::vector<basic_string> splits = Ext::split("\r\n", pos, max_splits);
 			basic_string out;
-			for(basic_string& str: splits) out += str.left(std::modify_original_t{}, width, fill) + '\n';
+			for(basic_string& str: splits) out += str.left(std::modify_original, width, fill) + '\n';
 			return out;
 		}
 
@@ -854,12 +854,12 @@ namespace dl {
 		}
 		constexpr inline basic_string right(size_t width, char fill = ' ') const {
 			basic_string out = *this;
-			return out.right(std::modify_original_t{}, width, fill);
+			return out.right(std::modify_original, width, fill);
 		}
 		constexpr basic_string right_multiline(size_t width, char fill = ' ', size_t pos = 0, size_t max_splits = -1) const {
 			std::vector<basic_string> splits = Ext::split("\r\n", pos, max_splits);
 			basic_string out;
-			for(basic_string& str: splits) out += str.right(std::modify_original_t{}, width, fill) + '\n';
+			for(basic_string& str: splits) out += str.right(std::modify_original, width, fill) + '\n';
 			return out;
 		}
 
@@ -967,7 +967,7 @@ namespace dl {
 
 			constexpr inline operator allocatedString() const { return allocatedString::from_utf32codepoint(operator uint32_t()); }
 			constexpr inline operator uint32_t() const { return utf8::peek_next(owner.referencedString->begin() + pos, owner.referencedString->end()); }
-			constexpr inline allocatedString unoptimizedString() const { return allocatedString::from_utf32codepoint<false>(operator uint32_t()); }
+			constexpr inline allocatedString unoptimizedString() const { return allocatedString::template from_utf32codepoint<false>(operator uint32_t()); }
 
 		};
 

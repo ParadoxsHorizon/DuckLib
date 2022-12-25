@@ -17,7 +17,7 @@ using namespace dl::literals;
 
 TEST_CASE("Type Demangling") {
 	CHECK( std::demangle(typeid(int)) == "int");
-	CHECK( std::demangle(typeid(std::stacktrace)) == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > (backward::Printer, backward::StackTrace)");
+	CHECK( std::demangle(typeid(std::stacktrace)) == "std::basic_stacktrace<std::allocator<std::stacktrace_entry> >");
 	CHECK( std::demangle(typeid(std::cout)) == "std::ostream");
 }
 
@@ -83,17 +83,13 @@ TEST_CASE("Extended size types") {
 	// std::cout << sizeof(iarb) << std::endl;
 }
 
-TEST_CASE("StackTrace") {
-	CHECK( std::stacktrace().empty() == false );
-}
-
 TEST_CASE("String Properties") {
 	// Fails due to minor inprecision
-	// string n = "127.8889";
-	// CAPTURE_CONSOLE
-	// 	std::cout << float(n);
-	// }
-	// CHECK( capture.str() == n );
+	string n = "127.889";
+	CAPTURE_CONSOLE
+		std::cout << float(n);
+	}
+	CHECK( capture.str() == n );
 
 	string s = "bおb";
 	CHECK( s.size() == 5 );
@@ -181,7 +177,7 @@ TEST_CASE( "Endians" ) {
 	CHECK( std::swap_endian((u64) 0x65) 				== 0x6500000000000000);
 
 	// benchmarks
-	std::benchmark_header("Endians");
+	std::benchmark::header("Endians");
 	BENCHMARK("8bit") {
 		std::do_not_optimize(
 			std::swap_endian((u8) 0xff)
@@ -205,309 +201,9 @@ TEST_CASE( "Endians" ) {
 }
 
 
-// -- Enum Wrapper Class --
+// --- POINTERS ----
 
 
-namespace std {
-	struct enum_conversion_error : public std::runtime_error { using std::runtime_error::runtime_error; };
-
-	template<typename T>
-	struct is_enum_class : std::false_type {};
-
-	template<typename T, int64_t index>
-	struct enum_name { constexpr static const char* value = "INVALID"; };
-
-	template<typename T, int64_t index>
-	struct enum_name_caseless { constexpr static const char* value = "INVALID"; };
-
-	template<typename T, int64_t _value>
-	struct enum_value_to_index : std::integral_constant<int64_t, std::numeric_limits<int64_t>::min()> {};
-
-	template<typename T, int64_t index>
-	struct enum_index_to_value : std::integral_constant<int64_t, std::numeric_limits<int64_t>::min()> {};
-}
-
-// Enum (base) implementation example
-struct enumBase;
-template<> struct std::is_enum<enumBase> : std::true_type {};
-template<> struct std::is_enum_class<enumBase> : std::true_type {};
-
-template<> struct std::enum_name<enumBase, 0> { constexpr static const char* value = "a"; };
-template<> struct std::enum_name<enumBase, 1> { constexpr static const char* value = "b"; };
-template<> struct std::enum_name<enumBase, 2> { constexpr static const char* value = "c"; };
-template<> struct std::enum_name<enumBase, 3> { constexpr static const char* value = "d"; };
-
-template<> struct std::enum_name_caseless<enumBase, 0> { constexpr static const char* value = "a"; };
-template<> struct std::enum_name_caseless<enumBase, 1> { constexpr static const char* value = "b"; };
-template<> struct std::enum_name_caseless<enumBase, 2> { constexpr static const char* value = "c"; };
-template<> struct std::enum_name_caseless<enumBase, 3> { constexpr static const char* value = "d"; };
-
-template<> struct std::enum_value_to_index<enumBase, 0> : std::integral_constant<int64_t, 0> {};
-template<> struct std::enum_value_to_index<enumBase, 1> : std::integral_constant<int64_t, 1> {};
-template<> struct std::enum_value_to_index<enumBase, 3> : std::integral_constant<int64_t, 2> {};
-template<> struct std::enum_value_to_index<enumBase, 4> : std::integral_constant<int64_t, 3> {};
-
-template<> struct std::enum_index_to_value<enumBase, 0> : std::integral_constant<int64_t, 0> {};
-template<> struct std::enum_index_to_value<enumBase, 1> : std::integral_constant<int64_t, 1> {};
-template<> struct std::enum_index_to_value<enumBase, 2> : std::integral_constant<int64_t, 3> {};
-template<> struct std::enum_index_to_value<enumBase, 3> : std::integral_constant<int64_t, 4> {};
-
-struct enumBase {
-	struct detail {
-		using enum_base_type = int;
-		enum class values : enum_base_type {
-			a = 0,
-			b,
-			c = 3,
-			d
-		};
-
-		constexpr static const values lastValue = max(values::a, values::b, values::c, values::d);
-		constexpr static const size_t lastIndex = 3;
-	};
-
-	static const enumBase a; // = detail::values::a;
-	static const enumBase b; // = detail::values::b;
-	static const enumBase c; // = detail::values::c;
-	static const enumBase d; // = detail::values::d;
-
-	detail::values value = (detail::values) 0;
-
-	constexpr explicit enumBase(const detail::values _value = (detail::values) 0) : value(_value) { }
-	constexpr explicit operator detail::values () const { return value; }
-	constexpr enumBase& operator= (const detail::values _value) { value = _value; return *this;}
-
-	constexpr explicit enumBase(const detail::enum_base_type _value) : value((detail::values) _value) { }
-	constexpr explicit operator detail::enum_base_type() const { return (detail::enum_base_type) value; }
-
-	constexpr optional<const char*> to_char_array() const {
-		switch(value) {
-		case detail::values::a: return std::enum_name<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::a>::value>::value;
-		case detail::values::b: return std::enum_name<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::b>::value>::value;
-		case detail::values::c: return std::enum_name<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::c>::value>::value;
-		case detail::values::d: return std::enum_name<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::d>::value>::value;
-		default: return {};
-		}
-	}
-	optional<std::string> tostring() const { if(auto opt = to_char_array(); opt) return *opt; else return {}; }
-
-	constexpr static enumBase from_string(const std::string_view str, const char* type = "enumBase") {
-		if(str == std::enum_name<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::a>::value>::value) return (enumBase) detail::values::a;
-		else if(str == std::enum_name<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::b>::value>::value) return (enumBase) detail::values::b;
-		else if(str == std::enum_name<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::c>::value>::value) return (enumBase) detail::values::c;
-		else if(str == std::enum_name<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::d>::value>::value) return (enumBase) detail::values::d;
-		else throw std::enum_conversion_error("Failed to convert string `"s + str + "` to " + type);
-	}
-
-	/*constexpr*/ static enumBase from_string_caseless(const string::view str, const char* type = "enumBase") {
-		if(str.caseless_equal(std::enum_name_caseless<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::a>::value>::value)) return (enumBase) detail::values::a;
-		else if(str.caseless_equal(std::enum_name_caseless<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::b>::value>::value)) return (enumBase) detail::values::b;
-		else if(str.caseless_equal(std::enum_name_caseless<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::c>::value>::value)) return (enumBase) detail::values::c;
-		else if(str.caseless_equal(std::enum_name_caseless<enumBase, std::enum_value_to_index<enumBase, (int64_t) detail::values::d>::value>::value)) return (enumBase) detail::values::d;
-		else throw std::enum_conversion_error("Failed to convert string `"s + str + "` to " + type);
-	}
-};
-
-constexpr const enumBase enumBase::a = (enumBase) enumBase::detail::values::a;
-constexpr const enumBase enumBase::b = (enumBase) enumBase::detail::values::b;
-constexpr const enumBase enumBase::c = (enumBase) enumBase::detail::values::c;
-constexpr const enumBase enumBase::d = (enumBase) enumBase::detail::values::d;
-
-template<> struct std::underlying_type<enumBase> { using type = typename enumBase::detail::enum_base_type; };
-
-std::ostream& operator << (std::ostream& s, const enumBase en) {
-	return s << *en.to_char_array();
-}
-
-std::odebugstream& operator << (std::odebugstream& s, const enumBase en) {
-	auto& _s = reference_cast<std::ostream>(s);
-	_s << *en.to_char_array() << " (enum = " << (enumBase::detail::enum_base_type) en.value << ")";
-	return s;
-}
-
-std::odebugstream& operator << (std::odebugstream& s, const enumBase::detail::values v) {
-	return s << (enumBase::detail::enum_base_type) v;
-}
-
-
-// ------------------------
-
-
-// Enum (Derived) implementation example
-struct enumDerive;
-template<> struct std::is_enum<enumDerive> : std::true_type {};
-template<> struct std::is_enum_class<enumDerive> : std::true_type {};
-
-template<> struct std::enum_name<enumDerive, 0> : public std::enum_name<enumBase, 0> {};
-template<> struct std::enum_name<enumDerive, 1> : public std::enum_name<enumBase, 1> {};
-template<> struct std::enum_name<enumDerive, 2> : public std::enum_name<enumBase, 2> {};
-template<> struct std::enum_name<enumDerive, 3> : public std::enum_name<enumBase, 3> {};
-template<> struct std::enum_name<enumDerive, 4> { constexpr static const char* value = "e"; };
-template<> struct std::enum_name<enumDerive, 5> { constexpr static const char* value = "F"; };
-
-template<> struct std::enum_name_caseless<enumDerive, 0> : public std::enum_name_caseless<enumBase, 0> {};
-template<> struct std::enum_name_caseless<enumDerive, 1> : public std::enum_name_caseless<enumBase, 1> {};
-template<> struct std::enum_name_caseless<enumDerive, 2> : public std::enum_name_caseless<enumBase, 2> {};
-template<> struct std::enum_name_caseless<enumDerive, 3> : public std::enum_name_caseless<enumBase, 3> {};
-template<> struct std::enum_name_caseless<enumDerive, 4> { constexpr static const char* value = "e"; };
-template<> struct std::enum_name_caseless<enumDerive, 5> { constexpr static const char* value = "f"; };
-
-template<> struct std::enum_value_to_index<enumDerive, 0> : public std::enum_value_to_index<enumBase, 0> {};
-template<> struct std::enum_value_to_index<enumDerive, 1> : public std::enum_value_to_index<enumBase, 1> {};
-template<> struct std::enum_value_to_index<enumDerive, 2> : public std::enum_value_to_index<enumBase, 2> {};
-template<> struct std::enum_value_to_index<enumDerive, 3> : public std::enum_value_to_index<enumBase, 3> {};
-template<> struct std::enum_value_to_index<enumDerive, 4> : public std::enum_value_to_index<enumBase, 4> {};
-template<> struct std::enum_value_to_index<enumDerive, (int64_t)enumBase::detail::lastValue + 1> : std::integral_constant<int64_t, 4> {};
-template<> struct std::enum_value_to_index<enumDerive, (int64_t)enumBase::detail::lastValue + 2> : std::integral_constant<int64_t, 5> {};
-
-template<> struct std::enum_index_to_value<enumDerive, 0> : public std::enum_index_to_value<enumBase, 0> {};
-template<> struct std::enum_index_to_value<enumDerive, 1> : public std::enum_index_to_value<enumBase, 1> {};
-template<> struct std::enum_index_to_value<enumDerive, 2> : public std::enum_index_to_value<enumBase, 2> {};
-template<> struct std::enum_index_to_value<enumDerive, 3> : public std::enum_index_to_value<enumBase, 3> {};
-template<> struct std::enum_index_to_value<enumDerive, 4> : std::integral_constant<int64_t, (int64_t)enumBase::detail::lastValue + 1> {};
-template<> struct std::enum_index_to_value<enumDerive, 5> : std::integral_constant<int64_t, (int64_t)enumBase::detail::lastValue + 2> {};
-
-struct enumDerive : enumBase {
-private: using Base = enumBase;
-public:
-	struct detail {
-		using enum_base_type = Base::detail::enum_base_type;
-		enum class values : enum_base_type {
-			e = (enum_base_type) Base::detail::lastValue + 1,
-			F
-		};
-
-		constexpr static const values lastValue = max((values) Base::detail::lastValue, values::e, values::F);
-		constexpr static const size_t lastIndex = 3 + 2;
-
-	};
-
-	static const enumDerive e; // = detail::values::e;
-	static const enumDerive F; // = detail::values::F;
-
-
-	constexpr explicit enumDerive(const detail::values _value = (detail::values) 0) : Base((Base::detail::values) _value) { }
-	constexpr operator detail::values () const { return (detail::values) value; }
-	constexpr enumDerive& operator= (const detail::values _value) { value = (Base::detail::values)_value; return *this; }
-
-	constexpr enumDerive(const Base::detail::values _value) : Base(_value) { }
-	constexpr explicit operator Base::detail::values () const { return (Base::detail::values) value; }
-	constexpr enumDerive& operator= (const Base::detail::values _value) { value = _value; return *this; }
-
-	constexpr enumDerive(const Base _value) : Base(_value) { }
-	constexpr enumDerive& operator= (const Base _value) { value = (Base::detail::values)_value; return *this; }
-
-	constexpr explicit enumDerive(const detail::enum_base_type _value) : Base((Base::detail::values) _value) { }
-	constexpr explicit operator detail::enum_base_type() const { return (detail::enum_base_type) value; }
-
-	constexpr optional<const char*> to_char_array() const {
-		switch((detail::values) value) {
-		case detail::values::e: return std::enum_name<enumDerive, std::enum_value_to_index<enumDerive, (int64_t) detail::values::e>::value>::value;
-		case detail::values::F: return std::enum_name<enumDerive, std::enum_value_to_index<enumDerive, (int64_t) detail::values::F>::value>::value;
-		default: return Base::to_char_array();
-		}
-	}
-	optional<std::string> tostring() const { if(auto opt = to_char_array(); opt) return *opt; else return {}; }
-
-	constexpr static enumDerive from_string(const std::string_view str, const char* type = "enumDerive") {
-		if(str == std::enum_name<enumDerive, std::enum_value_to_index<enumDerive, (int64_t) detail::values::e>::value>::value) return (enumDerive) detail::values::e;
-		else if(str == std::enum_name<enumDerive, std::enum_value_to_index<enumDerive, (int64_t) detail::values::F>::value>::value) return (enumDerive) detail::values::F;
-		else return Base::from_string(str, type);
-	}
-
-	/*constexpr*/ static enumDerive from_string_caseless(const string::view str, const char* type = "enumDerive") {
-		if(str.caseless_equal(std::enum_name_caseless<enumDerive, std::enum_value_to_index<enumDerive, (int64_t) detail::values::e>::value>::value)) return (enumDerive) detail::values::e;
-		else if(str.caseless_equal(std::enum_name_caseless<enumDerive, std::enum_value_to_index<enumDerive, (int64_t) detail::values::F>::value>::value)) return (enumDerive) detail::values::F;
-		else return Base::from_string_caseless(str, type);
-	}
-
-	constexpr auto operator<=>(const enumBase b) const {
-		return 	a.value == b.value ? std::strong_ordering::equal :
-				a.value <  b.value ? std::strong_ordering::less :
-			         	 std::strong_ordering::greater;
-	}
-};
-
-constexpr const enumDerive enumDerive::e = (enumDerive) enumDerive::detail::values::e;
-constexpr const enumDerive enumDerive::F = (enumDerive) enumDerive::detail::values::F;
-
-template<> struct std::underlying_type<enumDerive> { using type = typename enumDerive::detail::enum_base_type; };
-
-constexpr auto operator<=>(const enumBase a, const enumDerive b)  { return b <=> a; }
-constexpr bool operator==(const enumBase a, const enumDerive b)  { return b.value == a.value; }
-constexpr bool operator!=(const enumBase a, const enumDerive b)  { return b.value != a.value; }
-constexpr bool operator>(const enumBase a, const enumDerive b)  { return b > a; }
-constexpr bool operator<(const enumBase a, const enumDerive b)  { return b < a; }
-constexpr bool operator>=(const enumBase a, const enumDerive b)  { return b >= a; }
-constexpr bool operator<=(const enumBase a, const enumDerive b)  { return b <= a; }
-
-std::ostream& operator << (std::ostream& s, const enumDerive en) {
-	return s << *en.to_char_array();
-}
-
-std::odebugstream& operator << (std::odebugstream& s, const enumDerive en) {
-	auto& _s = reference_cast<std::ostream>(s);
-	_s << *en.to_char_array() << " (enum = " << (enumDerive::detail::enum_base_type) en.value << ")";
-	return s;
-}
-
-std::odebugstream& operator << (std::odebugstream& s, const enumDerive::detail::values v) {
-	return s << (enumDerive::detail::enum_base_type) v;
-}
-
-
-TEST_CASE( "Enum Wrappers" ) {
-	// Based on an int... should only be as large as an int
-	CHECK( sizeof(enumDerive) == sizeof(int) );
-
-	CHECK( (int)enumBase::detail::lastValue != (int)enumDerive::detail::lastValue );
-	CHECK( (int)enumBase::detail::lastValue == 4 );
-	CHECK( (int)enumDerive::detail::lastValue == 6 );
-
-	CHECK( enumBase::detail::lastIndex != enumDerive::detail::lastIndex );
-	CHECK( enumBase::detail::lastIndex == 3 );
-	CHECK( enumDerive::detail::lastIndex == 5);
-
-	CHECK( (int) enumDerive::a == 0 );
-	CHECK( enumDerive::b == enumDerive::from_string("b") );
-	CHECK( enumDerive::from_string_caseless("f") == enumDerive::F );
-
-	bool exceptionOccurred = false;
-	try {
-		enumDerive::from_string("f");
-	} catch (std::enum_conversion_error&) {
-		exceptionOccurred = true;
-	}
-	CHECK( exceptionOccurred == true );
-
-	std::stringstream capture;
-	/* capture(std::cout) */{
-		std::streambuf* std__cout_buf = std::cout.rdbuf();
-		std::cout.rdbuf(capture.rdbuf());
-		defer { std::cout.rdbuf(std__cout_buf); };
-
-		std::cout << enumDerive::a << " - " << enumDerive::F;
-	}
-	CHECK( capture.str() == "a - F" );
-
-	std::benchmark_header("Enum Lookup");
-	BENCHMARK("constexpr") {
-		constexpr auto atCompileTime = enumDerive::from_string("F");
-		std::do_not_optimize(atCompileTime);
-	};
-
-	BENCHMARK("normal") {
-		std::do_not_optimize(
-			enumDerive::from_string("F")
-		);
-	};
-
-	BENCHMARK("caseless") {
-		std::do_not_optimize(
-			enumDerive::from_string_caseless("f")
-		);
-	};
-}
 
 TEST_CASE( "Relative Pointers" ) {
 	char here = 'a';
@@ -582,60 +278,9 @@ TEST_CASE( "Observable Pointers" ) {
     CHECK(obs_ptr == nullptr);
 }
 
-// template <class T, class ExtsA, class LayA, class AccA, class ExtsB, class LayB, class AccB >
-// T dot_product(std::mdarray<T, ExtsA, LayA, AccA> const& a, std::mdarray<T, ExtsB, LayB, AccB> const& b)
-// 	requires (ExtsA::rank() == ExtsB::rank() && ExtsA::rank() == 2)
-// {
-// 	T result = 0;
-// 	for(int i = 0; i < a.extent(0); ++i)
-// 		for(int j = 0; j < a.extent(1); ++j)
-// 			result += a(i, j) * b(i, j);
-// 	return result;
-// }
 
-// //================================================================================
+// --- Variant & Any ---
 
-// template <class T, class ExtsA, class LayA, class AccA>
-// void fill_in_order(std::mdarray<T, ExtsA, LayA, AccA>& a)
-// 	requires (ExtsA::rank() == 2)
-// {
-// 	T count = 0;
-// 	for(int i = 0; i < a.extent(0); ++i)
-// 		for(int j = 0; j < a.extent(1); ++j)
-// 			a(i, j) = count++;
-// }
-
-// TEST_CASE( "Multiarray" ) {
-// 	mdarray<int, 10, 10, 2> a;
-
-// 	constexpr int rows = 3;
-// 	constexpr int cols = 3;
-
-// 	{
-// 		using array_2d_dynamic = std::mdarray<int, std::extents<std::dynamic_extent, std::dynamic_extent>, std::layout_right>;
-// 		using array_2d_dynamic_left = std::mdarray<int, std::extents<std::dynamic_extent, std::dynamic_extent>, std::layout_left>;
-
-// 		auto a = array_2d_dynamic(rows, cols);
-// 		auto b = array_2d_dynamic_left(rows, cols);
-
-// 		fill_in_order(a);
-// 		fill_in_order(b);
-
-// 		CHECK(dot_product(a, b) == 204);
-// 	}
-// }
-
-TEST_CASE( "Generator" ) {
-
-	auto iota = [](int start = 0, int end = -1) -> std::generator<int> {
-		for( ; start < end || end < start; start++)
-			co_yield start;
-	};
-
-	int last = 0;
-	for(int x: iota(0, 10))
-		CHECK(x == last++);
-}
 
 TEST_CASE( "Variant & Any" ) {
 	using variant = dl::variant<int, string, float>;
@@ -646,7 +291,7 @@ TEST_CASE( "Variant & Any" ) {
 	CHECK( v.holds_type<int>() == true );
 	CHECK( v.holds_value(7) == true );
 	CHECK( *v.value<int>() == 7 );
-	// CHECK( v.value<string>() == std::nullopt );
+	CHECK( v.value<string>() == std::nullopt );
 
 	any a;
 	a = (string) "bob";
@@ -661,7 +306,7 @@ TEST_CASE( "Variant & Any" ) {
 	CHECK( v.holds_type<string>() == true );
 	CHECK( v.holds_value<string>("bob") == true );
 	CHECK( *v.value<string>() == "bob" );
-	// CHECK( v.value<int>() == std::nullopt );
+	CHECK( v.value<int>() == std::nullopt );
 
 	a = 7;
 	v = a.variant(variant::types{});
@@ -669,7 +314,7 @@ TEST_CASE( "Variant & Any" ) {
 	CHECK( v.holds_type<int>() == true );
 	CHECK( v.holds_value(7) == true );
 	CHECK( *v.value<int>() == 7 );
-	// CHECK( v.value<string>() == std::nullopt );
+	CHECK( v.value<string>() == std::nullopt );
 
 	dl::variant<int, string, float, bool> v2 = v;
 	CHECK( v2.holds_type<int>() == true );
@@ -710,213 +355,56 @@ TEST_CASE( "Expected" ) {
 }
 
 
-#include <delegate>
+// ---- Math ----
 
-struct Hello  {
-	void operator()() const {
-		std::cout << "Hello";
-	}
+struct S {
+	int a;
+	double b;
 };
 
-void World() {
-	std::cout << " World!" << std::endl;
+TEST_CASE( "Binary Transformation" ) {
+	float f = 5;
+	double d = 7;
+	string str = "bob";
+	S struc = {5, 6};
+	dl::vector<int> v = {1, 2, 3, 4, 5, 6, 7};
+
+	std::stringstream s;
+	s << std::binary(f).convert_endian(std::endian::little)
+		<< std::binary(f).convert_big_endian()
+		<< std::binary(d)
+		<< std::binary(str)
+		<< std::binary(struc)
+		<< std::binary(v).convert_big_endian();
+
+	// for(char b: s.str())
+	// 	std::cout << (std::byte) b << " ";
+	// std::cout << std::endl;
+
+	std::stringstream sin(s.str());
+	f = 0;
+	d = 0;
+	str.clear();
+	v.clear();
+	S s2;
+	float f2;
+	sin >> std::binary{f}//.convert_little_endian()
+		>> std::binary{f2}.convert_big_endian()
+		>> std::binary{d}
+		>> std::binary{str}
+		>> std::binary{s2}
+		>> std::binary{v}.convert_endian(std::endian::big);
+
+	CHECK(f == 5);
+	CHECK(f2 == 5); // TODO:
+	CHECK(d == 7);
+	CHECK(str == "bob");
+	CHECK(s2.a == 5);
+	CHECK(s2.b == 6);
+	for(int i = 1; i <= 7; i++)
+		CHECK(v[i - 1] == i);
 }
 
-struct MaximumBehavior {
-	template<class Itterator>
-	auto operator()(Itterator begin, Itterator end) {
-		typename Itterator::value_type max = -INFINITY;
-		for(auto it = begin; it != end; it++)
-			max = std::max(max, *it);
-		return max;
-	}
-};
-
-struct MinimumBehavior {
-	template<class Itterator>
-	auto operator()(Itterator begin, Itterator end) {
-		typename Itterator::value_type min = INFINITY;
-		for(auto it = begin; it != end; it++)
-			min = std::min(min, *it);
-		return min;
-	}
-};
-
-TEST_CASE( "Delegate" ) {
-	std::delegate<void()> helloWorld;
-
-	Hello h;
-	helloWorld += h;
-	helloWorld += World;
-
-	{CAPTURE_CONSOLE
-			helloWorld();
-		}
-
-		CHECK(capture.str() == "Hello World!\n");
-	}
-
-	helloWorld -= World;
-
-	{CAPTURE_CONSOLE
-			helloWorld();
-		}
-
-		CHECK(capture.str() == "Hello");
-	}
-
-
-	std::delegate<float(float, float)> s;
-
-	// Sum
-	s += std::make_delegate([](float a , float b) -> float {
-		return a + b;
-	});
-	// Difference
-	s += std::make_delegate([](float a , float b) -> float {
-		return a - b;
-	});
-	// Product
-	auto productDelegate = std::make_delegate([](float a , float b) -> float {
-		return a * b;
-	});
-	s += productDelegate;
-	// Quotient (closure)
-	s.connect( std::make_delegate([&](float a , float b) -> float {
-		return a / b;
-	}) );
-
-	// Convertible delegate
-	s += std::make_delegate([](int a, int b) {
-		return a + b;
-	});
-
-	// Empty delegate
-	auto emptyDelegate = std::make_delegate([]{
-		return -5.f;
-	});
-	s += emptyDelegate;
-
-	CHECK( s(MaximumBehavior{}, 3, 5) == 15 );
-
-	s -= productDelegate; // TODO: Removal isn't working!
-
-	CHECK( s(MaximumBehavior{}, 3, 5) == 8 );
-	CHECK( s(MinimumBehavior{}, 3, 5) == -5 );
-
-	s.disconnect(emptyDelegate);
-
-	CHECK( s(MinimumBehavior{}, 3, 5) == -2 );
-
-	std::benchmark_header();
-	BENCHMARK("Math") {
-		std::do_not_optimize(
-			s(MaximumBehavior{}, 3, 5)
-		);
-	};
-}
-
-TEST_CASE( "ValueDelegate" ) {
-	std::value_delegate<int> i = 0;
-	bool first = true;
-	i.on_change() = [&first](int old, int new_) {
-		// std::cout << old << " -> " << new_ << std::endl;
-		if(first) {
-			CHECK(old == 0);
-			CHECK(new_ == 5);
-			first = false;
-		} else {
-			CHECK(old == 5);
-			CHECK(new_ == 27);
-		}
-	};
-
-	i = 5;
-	CHECK( i == 5 );
-	i = 27;
-	CHECK( i == 27 );
-
-	std::value_delegate<array<int, 2>> a = array<int, 2>{7, 4};
-	a.on_change() = [](auto& old, auto& new_) {
-		// std::cout << old[0] << " -> " << new_[0] << std::endl;
-		CHECK( (old)[0] == 7 );
-		CHECK( (old)[1] == 4 );
-		CHECK( (new_)[0] == 4 );
-		CHECK( (new_)[1] == 7 );
-	};
-
-	{
-		auto r = a.record_changes();
-		std::ranges::sort(*r);
-	}
-	CHECK( (*a)[0] == 4 );
-	CHECK( (*a)[1] == 7 );
-}
-
-// TEST_CASE( "Binary Transformation" ) {
-// 	float f = 5;
-// 	double d = 7;
-// 	string str = "bob";
-// 	dl::vector<int> v = {1, 2, 3, 4, 5, 6, 7};
-
-// 	std::stringstream s;
-// 	s << std::binary(f).convert_endian(std::endian::little)
-// 		<< std::binary(f).convert_big_endian()
-// 		<< std::binary(d)
-// 		<< std::binary(str)
-// 		<< std::binary(v).convert_big_endian();
-
-// 	// for(char b: s.str())
-// 	// 	std::cout << (std::byte) b << " ";
-// 	// std::cout << std::endl;
-
-// 	std::stringstream sin(s.str());
-// 	f = 0;
-// 	d = 0;
-// 	str.clear();
-// 	v.clear();
-// 	float f2;
-// 	sin >> std::binary{f}//.convert_big_endian()
-// 		>> std::binary{f2}.convert_big_endian()
-// 		>> std::binary{d}
-// 		>> std::binary{str}
-// 		>> std::binary{v}.convert_endian(std::endian::big);
-
-// 	CHECK(f == 5);
-// 	CHECK(f2 == 5); // TODO:
-// 	CHECK(d == 7);
-// 	CHECK(str == "bob");
-// 	for(int i = 1; i <= 7; i++)
-// 		CHECK(v[i - 1] == i);
-// }
-
-// #include <io>
-
-// TEST_CASE( "fast_io" ) {
-// 	size_t a = 5, b = 6;
-
-// 	std::println("Hello world", "\n");
-// 	std::print << (a + b) << std::io::endl;
-
-// 	std::debug::print << (a + b) << std::io::endl;
-// 	std::perr << "This line is an error" << std::io::endl;
-
-// 	std::benchmark_header("IO");
-// 	BENCHMARK("fast_io") {
-// 		perr(a + b);
-// 		perrln(a + b);
-// 	};
-
-// 	BENCHMARK("fast_io_stream") {
-// 		std::perr(a + b);
-// 		std::perr << (a + b) << std::io::endl;
-// 	};
-
-// 	BENCHMARK("iostream") {
-// 		std::cerr << (a + b) << std::flush;
-// 		std::cerr << (a + b) << std::__1::endl;
-// 	};
-// }
 
 #include <math>
 

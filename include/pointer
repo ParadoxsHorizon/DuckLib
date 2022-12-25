@@ -7,7 +7,7 @@
 
 namespace std {
 
-	using namespace oup; // Import observable smart pointers
+	using namespace oup; // Import observable unique pointers
 
 	
 	// -- Smart Pointer Traits From: https://github.com/agruzdev/Yato --
