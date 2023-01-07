@@ -1,9 +1,7 @@
 #ifndef ___DUCKED_C_STRING_HPP___
 #define ___DUCKED_C_STRING_HPP___
 #include <string>
-#include <span>
 
-#include "dl/array"
 #include "endian"
 #include "dl/concepts"
 #include "dl/type_traits"
@@ -16,6 +14,29 @@ namespace std {
 }
 
 namespace dl {
+	// Class representing a slice of an array (or string)
+	class slice: public std::pair<ptrdiff_t, ptrdiff_t> {
+		using P = std::pair<ptrdiff_t, ptrdiff_t>;
+	public:
+		using P::P; 
+		using P::operator=;
+		explicit slice(ptrdiff_t begin = 0, ptrdiff_t end = -1, bool marker = true) : P(begin, end) {}
+
+		// Normalizes a slice to only have positive numbers (converts negative values to the equivalents in terms of a container's size)
+		slice apply_size(size_t size) {
+			slice ret = *this;
+			if(first < 0) ret.first += size;
+			if(second < 0) ret.second += size + 1;
+			return ret;
+		}
+	};
+
+	struct slice_inclusive: public slice {
+		// using slice::slice;
+		using slice::operator=;
+		explicit slice_inclusive(ptrdiff_t begin = 0, ptrdiff_t end = -2) : slice(begin, end + 1, true) {}
+	};
+
 
 	namespace detail {
 		extern "C" {
@@ -58,7 +79,6 @@ namespace dl {
 				s >> std::setprecision(std::numeric_limits<T>::max_digits10) >> out;
 				return out;
 			} // TODO: Provide specalized optimizations
-
 
 			// Contains override
 			bool contains(const Base& needle) { return this->underlying().find(needle) != npos; }
@@ -490,6 +510,12 @@ namespace dl {
 		inline operator std::string_view() { return *this; }
 		inline operator const std::string_view() const { return *this; }
 
+		using Base::operator[];
+		constexpr inline basic_string_view operator[](dl::slice s) { 
+			s = s.apply_size(this->size());
+			return {this->data() + s.first, s.second - s.first};
+		}
+
 		constexpr basic_string_view trim(const CharType* delims = " \t\v\f\r\n") const {
 			basic_string_view l = this->ltrim(delims);
 			size_t pos = l.data() - Base::data();
@@ -577,6 +603,12 @@ namespace dl {
 		// Intrinsic Coehersion from std::string_view's
 		constexpr basic_string(const std::basic_string_view<CharType, Traits>& base) : Base(base) {}
 		constexpr basic_string(const std::basic_string_view<CharType, Traits>&& base) : Base(base) {}
+
+		using Base::operator[];
+		constexpr inline view operator[](dl::slice s) { 
+			s = s.apply_size(this->size());
+			return {Base::data() + s.first, size_t{s.second - s.first}};
+		}
 
 		// Gets a String View of this string
 		constexpr inline view substr_view(size_t pos = 0, size_t len = npos) const {

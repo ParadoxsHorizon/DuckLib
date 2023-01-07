@@ -180,6 +180,10 @@ namespace dl::builtin {
 }
 
 namespace std {
+	// Drag slicing into std
+	using dl::slice;
+	using dl::slice_inclusive;
+
 	// Import functions for optional and expected
 	using namespace tl;
 
