@@ -22,6 +22,7 @@ option(DUCKLIB_BUILD_TESTING "Build DuckLib tests " ${IS_TOPLEVEL_PROJECT})
 if(NOT DEFINED DUCKLIB_CORE_FOUND OR NOT ${DUCKLIB_CORE_FOUND})
 	add_subdirectory("thirdparty/core")
 endif()
+add_subdirectory(thirdparty/subprocess)
 
 set(CXX_STANDARD 23 REQUIRED)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-literal-suffix -std=c++23")
@@ -30,7 +31,7 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-literal-suffix -std=c++23")
 
 file(GLOB sources "src/*.cpp" "src/*.c")
 set(includes "include/" "thirdparty")
-set(libraries dl::dlcore)
+set(libraries dl::dlcore subprocess)
 
 add_library(DuckLib_Desktop_Core STATIC "src/stream.cpp")
 target_include_directories (DuckLib_Desktop_Core PUBLIC ${includes})

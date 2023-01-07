@@ -1,0 +1,73 @@
+#ifndef ___DUCKED_C_SUBPROCESS_HPP___
+#define ___DUCKED_C_SUBPROCESS_HPP___
+
+#include <filesystem>
+#include "subprocess.hpp"
+
+namespace std {
+    inline namespace subprocess {
+        using signum = ::subprocess::SigNum;
+        using pipe_handle = ::subprocess::PipeHandle;
+        using pipe_var_index = ::subprocess::PipeVarIndex;
+        using command_line = ::subprocess::CommandLine;
+        using envmap = ::subprocess::EnvMap;
+        using pipe_option = ::subprocess::PipeOption;
+        using subprocess_error = ::subprocess::SubprocessError;
+        using os_error = ::subprocess::OSError;
+        using command_not_found_error = ::subprocess::CommandNotFoundError;
+        using spawn_error = ::subprocess::SpawnError;
+        using timeout_expired = ::subprocess::TimeoutExpired;
+        using called_process_error = ::subprocess::CalledProcessError;
+        using completed_process = ::subprocess::CompletedProcess;
+
+        using environ_setter = ::subprocess::EnvironSetter;
+        using environ = ::subprocess::Environ;
+        using cwd_guard = ::subprocess::CwdGuard;
+        using env_guard = ::subprocess::EnvGuard;
+
+        using pipe_pair = ::subprocess::PipePair;
+
+        using run_options = ::subprocess::RunOptions;
+        using process_builder = ::subprocess::ProcessBuilder;
+        using popen = ::subprocess::Popen;
+        using stop_watch = ::subprocess::StopWatch;
+
+        using pipe_var = ::subprocess::PipeVar;
+
+        using run_builder = ::subprocess::RunBuilder;
+        using stop_watch = ::subprocess::StopWatch;
+
+        environ& cenv = ::subprocess::cenv;
+        inline envmap current_env_copy() { return ::subprocess::current_env_copy(); }
+        inline std::u16string create_env_block(const envmap& map) { return ::subprocess::create_env_block(map); }
+
+        inline std::string get_env(const std::string& var) { return ::subprocess::getenv(var); }
+        inline std::string get_env(std::string_view var) { return ::subprocess::getenv(std::string(var)); }
+        inline std::filesystem::path find_program(const std::string& name) { return ::subprocess::find_program(name); }
+        inline std::filesystem::path find_program(std::string_view name) { return ::subprocess::find_program(std::string(name)); }
+        inline void find_program_clear_cache() { ::subprocess::find_program_clear_cache(); }
+        inline std::string escape_shell_arg(const std::string& arg) { return ::subprocess::escape_shell_arg(arg); }
+        inline std::string escape_shell_arg(std::string_view arg) { return ::subprocess::escape_shell_arg(std::string(arg)); }
+        inline std::filesystem::path getcwd() { return ::subprocess::getcwd(); }
+        inline void setcwd(const std::filesystem::path& path) { return ::subprocess::setcwd(path); }
+
+        inline bool pipe_close(pipe_handle handle) { return ::subprocess::pipe_close(handle); }
+        inline pipe_pair pipe_create(bool inheritable = true) { return ::subprocess::pipe_create(inheritable); }
+        inline void pipe_set_inheritable(pipe_handle handle, bool inheritable) { ::subprocess::pipe_set_inheritable(handle, inheritable); }
+        inline size_t pipe_read(pipe_handle handle, void* buffer, size_t size) { return ::subprocess::pipe_read(handle, buffer, size); }
+        inline size_t pipe_read(pipe_handle handle, std::span<std::byte> buffer) { return pipe_read(handle, buffer.data(), buffer.size()); }
+        inline size_t pipe_write(pipe_handle handle, const void* buffer, size_t size) { return ::subprocess::pipe_write(handle, buffer, size); }
+        inline size_t pipe_write(pipe_handle handle, std::span<const std::byte> buffer) { return pipe_write(handle, buffer.data(), buffer.size()); }
+        inline void pipe_ignore_and_close(pipe_handle handle) { ::subprocess::pipe_ignore_and_close(handle); }
+        inline std::string pipe_read_all(pipe_handle handle) { return ::subprocess::pipe_read_all(handle); }
+       
+        inline pipe_option get_pipe_option(const pipe_var& option) { return ::subprocess::get_pipe_option(option); }
+
+        inline completed_process run(popen& popen, bool check = false) { return ::subprocess::run(popen, check); }
+        inline completed_process run(command_line command, run_options options={}) { return ::subprocess::run(command, options); }
+        inline double monotonic_seconds() { return ::subprocess::monotonic_seconds(); }
+        inline double sleep_seconds(double seconds) { return ::subprocess::sleep_seconds(seconds); }
+    }
+}
+
+#endif // ___DUCKED_C_SUBPROCESS_HPP___
