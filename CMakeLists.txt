@@ -19,36 +19,33 @@ endif()
 
 option(DUCKLIB_BUILD_TESTING "Build DuckLib tests " ${IS_TOPLEVEL_PROJECT})
 
-find_package(Boost)
-include("cmake/FindUnwind.cmake")
-include("cmake/FindDWARF.cmake")
-set(FELSPAR_CHECK_TESTS OFF CACHE STRING "Turn off to stop tests from being built and run")
-include("thirdparty/coro/requirements.cmake")
-add_subdirectory("thirdparty/doctest")
-add_subdirectory("thirdparty/nanobench")
-add_subdirectory("thirdparty/utfcpp")
-add_subdirectory("thirdparty/coro")
 
-set(CXX_STANDARD 20 REQUIRED)
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-literal-suffix -std=c++20")
+if(NOT DEFINED DUCKLIB_CORE_FOUND OR NOT ${DUCKLIB_CORE_FOUND})
+	add_subdirectory("thirdparty/core")
+endif()
+add_subdirectory(thirdparty/libunifex)
+
+set(CXX_STANDARD 23 REQUIRED)
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-literal-suffix -std=c++23")
 
 # add_compile_options (-flto -Wall -Wextra)
 
-file(GLOB sources "src/*.cpp" "src/*.c" "thirdparty/DuckLibLite/src/*.cpp" "thirdparty/strnatcmp.cpp")
-set(includes "src/" "include/" ${ext_include_dir} ${Boost_INCLUDE_DIRS} "thirdparty/" "thirdparty/doctest/doctest" "thirdparty/mdspan/include/" "thirdparty/nytl")
-set(systemIncludes "include/std")
-set(libraries utf8::cpp nanobench doctest felspar-coro felspar-exceptions felspar-memory ${Boost_LIBRARIES} unwind::unwind dwarf::dwarf)
+file(GLOB sources "src/*.cpp" "src/*.c")
+set(includes "include/")
+set(libraries dl::dlcore unifex)
 
-add_library(DuckLib STATIC ${sources})
-target_include_directories (DuckLib PUBLIC ${includes})
-target_include_directories (DuckLib SYSTEM PUBLIC ${systemIncludes})
-target_link_libraries(DuckLib PUBLIC ${libraries})
+add_library(DuckLib_Executors STATIC "src/null.cpp")
+target_include_directories (DuckLib_Executors PUBLIC ${includes})
+target_link_libraries(DuckLib_Executors PUBLIC ${libraries})
 
-# if (IS_TOPLEVEL_PROJECT)
-	include("thirdparty/doctest/scripts/cmake/doctest.cmake")
-	enable_testing()
+add_library(dl::executor ALIAS DuckLib_Executors)
 
-	add_executable(tests "tests.cpp")
-	target_link_libraries(tests PUBLIC DuckLib)
-	doctest_discover_tests(tests)
+# if (DUCKLIB_BUILD_TESTING)
+# 	if(NOT DEFINED DUCKLIB_CORE_FOUND OR NOT ${DUCKLIB_CORE_FOUND})
+# 		include("thirdparty/core/cmake/testing.cmake") # This needs to become shorter!
+# 	endif()
+
+# 	add_executable(tests-util "tests.cpp")
+# 	target_link_libraries(tests-util PUBLIC dl::util)
+# 	doctest_discover_tests(tests-util)
 # endif()
