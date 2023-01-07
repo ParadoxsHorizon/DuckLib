@@ -8,6 +8,7 @@
 #include "dl/concepts"
 #include "dl/string"
 #include "dl/variant"
+#include "dl/tuple"
 #include "dl/nytl.hpp"
 #include "optional.hpp"
 #include "expected.hpp"
@@ -36,6 +37,7 @@ namespace dl::builtin {
 	template<class T, class Allocator = std::allocator<T>> struct dynarray: std::dynamic_array<T, Allocator> { using std::dynamic_array<T, Allocator>::dynamic_array; };
 
 	template<typename... Ts> using variant = dl::variant<Ts...>;
+	template<typename... Ts> using tuple = dl::tuple<Ts...>;
 	using any = dl::any;
 	// optional is "builtin" types
 	using namespace tl;

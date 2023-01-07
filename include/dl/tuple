@@ -1,0 +1,79 @@
+#ifndef ___DUCKED_C_TUPLE_HPP___
+#define ___DUCKED_C_TUPLE_HPP___
+#include <tuple>
+#include <dl/type_traits>
+
+namespace dl {
+    template<class... Ts>
+    struct tuple : public std::tuple<Ts...> {
+        using legacy = std::tuple<Ts...>;
+        using legacy::legacy;
+
+        /* Returns the index of the specified type. */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, Ts...>>>
+		[[nodiscard]]
+		static constexpr size_t index_of() noexcept {
+			size_t r {0};
+			const auto accumulator = [&r](const bool equ) noexcept {
+				r += !equ;
+				return equ;
+			};
+			(accumulator(std::is_same_v<T, Ts>) || ...);
+			return r;
+		}
+
+		/* Check if variant currently holds T. */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, Ts...>>>
+		[[nodiscard]]
+		constexpr bool holds_type() const noexcept {
+			return this->index() == index_of<T>();
+		}
+
+		/* Check if variant currently holds T and if the values match. */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, Ts...>>>
+		[[nodiscard]]
+		constexpr inline bool holds_value(T&& other) const noexcept {
+			return this->index() == index_of<T>() && std::get<T>(*this) == other;
+		}
+
+		/* Returns optional which contains the value if T is the current type, else std::nullopt. */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, Ts...>>>
+		[[nodiscard]]
+		constexpr inline std::optional<T> value() const noexcept {
+			return this->holds_type<T>() ? std::optional<T> {std::get<T>(*this)} : std::optional<T> {std::nullopt};
+		}
+
+		/*
+		 * Returns the containing value of T if T is the current type, else the a custom value of T.
+		 */
+		template <typename T, typename = std::enable_if_t<std::pack_contains_type_v<T, Ts...>>>
+		[[nodiscard]]
+		constexpr inline T value_or(const T&& instead) const noexcept {
+			return this->holds_type<T>() ? std::get<T>(*this) : instead;
+		}
+
+		/*
+		 * Returns the containing value of T if T is the current type, else invokes the lambda which returns a value instead.
+		 */
+		template <typename T, typename F, typename... Args>
+		[[nodiscard]]
+		constexpr inline T value_or_invoke(F&& functor, Args&&...args) const noexcept( noexcept(functor()) ) {
+			static_assert(std::pack_contains_type_v<T, Ts...>, "Only types explicitly listed are supported!");
+			static_assert(std::is_convertible_v<decltype(std::invoke(functor, std::forward<Args>()...)), T>, "Functor must return a T convertible type!");
+			return this->holds_type<T>() ? std::get<T>(*this) : std::invoke(functor, std::forward<Args>(args)...);
+		}
+
+        template<size_t N>
+        constexpr inline auto get() const noexcept {
+            return std::get<N>(*this);
+        }
+
+		// Visit wrapper
+		template <class Visitor>
+		inline auto visit(Visitor&& vis) { return std::visit(vis, *this); }
+		template <class R, class Visitor>
+		inline R visit(Visitor&& vis) { return std::visit<R>(vis, *this); }
+    };
+}
+
+#endif //___DUCKED_C_TUPLE_HPP___
