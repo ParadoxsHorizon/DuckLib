@@ -12,6 +12,21 @@
 #include "optional.hpp"
 #include "expected.hpp"
 
+#if OS_WINDOWS
+#	include "dl/windows.hpp"
+#endif
+
+// Code run at program startup (switches to UTF8 mode)
+__attribute__((constructor))
+void __DUCKLIB_INIT__(){
+#if OS_WINDOWS
+	__DUCKLIB_WINDOWS_INIT__();
+#endif
+
+	// Set the default local to handle UTF8
+	std::setlocale(LC_ALL, (std::locale().name() + ".UTF-8").c_str());
+}
+
 namespace dl::builtin {
 	// String is now a "builtin" type
 	typedef dl::string string;
@@ -19,7 +34,7 @@ namespace dl::builtin {
 	// Arrays are "builtin" types
 	template<typename T, size_t size> struct array: public dl::array<T, size> { using dl::array<T, size>::array; };
 	template<class T, class Allocator = std::allocator<T>> struct dynarray: std::dynamic_array<T, Allocator> { using std::dynamic_array<T, Allocator>::dynamic_array; };
-	
+
 	template<typename... Ts> using variant = dl::variant<Ts...>;
 	using any = dl::any;
 	// optional is "builtin" types

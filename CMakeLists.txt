@@ -31,7 +31,11 @@ set(DUCKLIB_CORE_FOUND true)
 
 # add_compile_options (-flto -Wall -Wextra)
 
-file(GLOB sources "src/*.cpp" "src/*.c" "thirdparty/DuckLibLite/src/*.cpp" "thirdparty/strnatcmp.cpp")
+IF (WIN32)
+	file(GLOB sources "src/*.cpp" "src/*.c" "src/*.rc" "thirdparty/DuckLibLite/src/*.cpp" "thirdparty/strnatcmp.cpp")
+ELSE()
+	file(GLOB sources "src/*.cpp" "src/*.c" "thirdparty/DuckLibLite/src/*.cpp" "thirdparty/strnatcmp.cpp")
+ENDIF()
 set(includes "src/" "include/" ${ext_include_dir} ${Boost_INCLUDE_DIRS} "thirdparty/" "thirdparty/doctest/doctest" "thirdparty/mdspan/include/" "thirdparty/nytl")
 set(systemIncludes "include/std")
 set(libraries utf8::cpp nanobench doctest ${Boost_LIBRARIES})

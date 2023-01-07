@@ -592,8 +592,6 @@ namespace dl {
 		constexpr inline operator view() const { return substr_view(); }
 
 		// Support appending a string_view or const char* to a string
-		constexpr inline basic_string operator+(const CharType* other) const { auto out = *this; out.append(other); return out; }
-		constexpr inline basic_string& operator+=(const CharType* other) { Base::append(other); return *this; }
 		constexpr inline basic_string operator+(const std::basic_string_view<CharType, Traits> other) const { auto out = *this; out.append(other.data(), other.size()); return out; }
 		constexpr inline basic_string& operator+=(const std::basic_string_view<CharType, Traits> other) { Base::append(other.data(), other.size()); return *this; }
 

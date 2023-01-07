@@ -171,7 +171,7 @@ namespace dl::builtin {
 	typedef boost::multiprecision::checked_int256_t i256sr;
 	typedef boost::multiprecision::checked_int512_t i512sr;
 	typedef boost::multiprecision::checked_int1024_t i1024sr;
-	typedef boost::safe_numerics::safe<uint> uintsr;
+	typedef boost::safe_numerics::safe<unsigned int> uintsr;
 	typedef boost::safe_numerics::safe<uint8_t> u8sr;
 	typedef boost::safe_numerics::safe<uint16_t> u16sr;
 	typedef boost::safe_numerics::safe<uint32_t> u32sr;
@@ -191,7 +191,7 @@ namespace dl::builtin {
 	typedef std::numeric_limits_wrapper<i256r> i256;
 	typedef std::numeric_limits_wrapper<i512r> i512;
 	typedef std::numeric_limits_wrapper<i1024r> i1024;
-	typedef std::numeric_limits_wrapper<uint> uintw;
+	typedef std::numeric_limits_wrapper<unsigned int> uintw;
 	typedef std::numeric_limits_wrapper<u8r> u8;
 	typedef std::numeric_limits_wrapper<u16r> u16;
 	typedef std::numeric_limits_wrapper<u32r> u32;
