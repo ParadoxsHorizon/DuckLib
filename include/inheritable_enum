@@ -1,0 +1,29 @@
+#ifndef ___DUCKED_C_INHERITABLE_ENUM_HPP___
+#define ___DUCKED_C_INHERITABLE_ENUM_HPP___
+
+// Macro which creates the start of an inheritable enum
+#define IENUM_GET_MACRO(_1,_2,NAME,...) NAME
+#define ienum1(name) struct name {\
+			struct typed { int value; };\
+			typed value;\
+\
+			constexpr name() : value(typed{0}) {}\
+			constexpr name(typed value) : value(value) {}\
+			std::strong_ordering operator<=>(name o) { return value.value <=> o.value.value; }\
+			bool operator==(name o) { return (*this <=> o) == std::strong_ordering::equivalent; }\
+			bool operator!=(name o) { return (*this <=> o) != std::strong_ordering::equivalent; }
+#define ienum2(name, base) struct name : base {\
+			using typed = base::typed;\
+\
+			constexpr name() : base(typed{0}) {}\
+			constexpr name(typed value) : base(value) {}\
+			constexpr name(base b) : base(b.value) {}\
+			std::strong_ordering operator<=>(name o) { return value.value <=> o.value.value; }\
+			bool operator==(name o) { return (*this <=> o) == std::strong_ordering::equivalent; }\
+			bool operator!=(name o) { return (*this <=> o) != std::strong_ordering::equivalent; }\
+			std::strong_ordering operator<=>(base o) { return value.value <=> o.value.value; }\
+			bool operator==(base o) { return (*this <=> o) == std::strong_ordering::equivalent; }\
+			bool operator!=(base o) { return (*this <=> o) != std::strong_ordering::equivalent; }
+#define ienum(...) IENUM_GET_MACRO(__VA_ARGS__, ienum2, ienum1)(__VA_ARGS__)
+
+#endif // ___DUCKED_C_INHERITABLE_ENUM_HPP___
