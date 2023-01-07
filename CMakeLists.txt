@@ -32,18 +32,18 @@ file(GLOB sources "src/*.cpp" "src/*.c")
 set(includes "include/" "thirdparty")
 set(libraries dl::dlcore)
 
-add_library(DuckLib_Stream STATIC "src/stream.cpp")
-target_include_directories (DuckLib_Stream PUBLIC ${includes})
-target_link_libraries(DuckLib_Stream PUBLIC ${libraries})
+add_library(DuckLib_Desktop_Core STATIC "src/stream.cpp")
+target_include_directories (DuckLib_Desktop_Core PUBLIC ${includes})
+target_link_libraries(DuckLib_Desktop_Core PUBLIC ${libraries})
 
-add_library(dl::stream ALIAS DuckLib_Stream)
+add_library(dl::desktop::core ALIAS DuckLib_Desktop_Core)
 
 if (DUCKLIB_BUILD_TESTING)
 	if(NOT DEFINED DUCKLIB_CORE_FOUND OR NOT ${DUCKLIB_CORE_FOUND})
 		include("thirdparty/core/cmake/testing.cmake") # This needs to become shorter!
 	endif()
 
-	add_executable(tests-stream "tests.cpp")
-	target_link_libraries(tests-stream PUBLIC dl::stream)
-	doctest_discover_tests(tests-stream)
+	add_executable(tests-desktop "tests.cpp")
+	target_link_libraries(tests-desktop PUBLIC dl::desktop::core)
+	doctest_discover_tests(tests-desktop)
 endif()
