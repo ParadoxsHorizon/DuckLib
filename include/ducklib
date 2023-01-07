@@ -120,6 +120,13 @@ namespace dl::builtin {
 	inline std::ostream& operator << (std::ostream& s, const std::monostate) { return s << "<null>"; }
 	template<class T1, class... Ts> inline std::ostream& operator << (std::ostream& s, const std::variant<T1, Ts...>& v) { std::visit([&](const auto& x) { s << x; }, std::forward<const std::variant<T1, Ts...>&>(v)); return s; }
 	template<class T1, class... Ts> inline std::ostream& operator << (std::ostream& s, const std::variant<T1, Ts...>&& v) { std::visit([&](const auto& x) { s << x; }, std::forward<const std::variant<T1, Ts...>&&>(v)); return s; }
+	// Output operator for spaceship (<=>) results
+	inline std::ostream& operator << (std::ostream& s, const std::partial_ordering o) {
+		if(o == std::partial_ordering::less) return s << (s.flags() & std::ios_base::boolalpha ? "less" : "<");
+		else if(o == std::partial_ordering::equivalent) return s << (s.flags() & std::ios_base::boolalpha ? "equivalent" : "=");
+		else if(o == std::partial_ordering::greater) return s << (s.flags() & std::ios_base::boolalpha ? "greater" : ">");
+		else return s << (s.flags() & std::ios_base::boolalpha ? "unordered" : "?");
+	}
 
 	// str built in function
 	inline dl::string str(std::string& s) { return s; }
