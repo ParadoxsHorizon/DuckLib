@@ -1,0 +1,96 @@
+#ifndef ___DUCKED_C_REMEMBERING_ITERAOR_HPP___
+#define ___DUCKED_C_REMEMBERING_ITERAOR_HPP___
+#include <ducklib>
+#include <iterator>
+
+namespace std {
+	template<std::input_iterator Iter>
+	class remembering_iterator : Iter {
+		size_t i = 0;
+		std::dynamic_array<std::iter_value_t<Iter>> memory;
+	public:
+		using iterator_category = std::bidirectional_iterator_tag;
+		using difference_type = Iter::difference_type;
+		using value_type = Iter::value_type;
+		using reference = Iter::reference;
+		using pointer = Iter::pointer;
+
+		using Iter::Iter;
+		remembering_iterator(Iter&& iter) : Iter(std::move(iter)) { memory.emplace_back(std::move(Iter::operator*())); }
+		remembering_iterator(std::default_sentinel_t sen) : Iter(sen) {}
+
+		void reset() {
+			i = 0;
+		}
+
+		operator size_t() { return i; }
+
+		auto& operator++(){
+			if(i < memory.size() - 1){
+				i++;
+				return memory[i];
+			}
+
+			Iter::operator++();
+			memory.emplace_back(std::move(Iter::operator*()));
+			i++;
+			return memory.back();
+		}
+
+		auto& operator++(int){
+			auto& value = memory[i];
+			operator++();
+			return value;
+		}
+
+		auto& operator+=(size_t dist){
+			if(dist == 0) return memory[i];
+
+			for(size_t i = 0; i < dist - 1; i++)
+				operator++();
+			return memory[i];
+		}
+
+		auto& operator--(){
+			i--;
+			i = std::max(i, (size_t)0);
+			return memory[i];
+		}
+
+		auto& operator--(int){
+			auto& value = memory[i];
+			operator--();
+			return value;
+		}
+
+		auto& operator-=(size_t dist){
+			if(dist == 0) return memory[i];
+
+			for(size_t i = 0; i < dist - 1; i++)
+				operator--();
+			return operator--();
+		}
+
+		auto& operator*() {
+			return memory[i];
+		}
+
+		auto* operator->() {
+			return &memory[i];
+		}
+
+		auto operator<=>(const remembering_iterator& o) const noexcept {
+			return i <=> o.i;
+		}
+
+		bool operator==(std::default_sentinel_t sen) const noexcept {
+			return reference_cast<Iter>(*this) == sen
+				&& i == memory.size() - 1; // The base iterator needs to be out of content, and we need to be at the end of the memory
+		}
+		bool operator!=(std::default_sentinel_t sen) const noexcept {
+			return !(*this == sen);
+		}
+	};
+} // std
+
+#endif // ___DUCKED_C_REMEMBERING_ITERAOR_HPP___

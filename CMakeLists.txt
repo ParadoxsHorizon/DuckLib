@@ -29,13 +29,13 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-literal-suffix -std=c++23")
 
 # add_compile_options (-flto -Wall -Wextra)
 
-file(GLOB sources "src/*.cpp" "src/*.c")
-set(includes "include/")
-set(libraries dl::dlcore)
+file(GLOB utilSources "src/*.cpp" "src/*.c")
+set(utilIncludes "include/")
+set(utilLibraries dl::dlcore)
 
 add_library(DuckLib_Utilities STATIC "src/null.cpp")
-target_include_directories (DuckLib_Utilities PUBLIC ${includes})
-target_link_libraries(DuckLib_Utilities PUBLIC ${libraries})
+target_include_directories (DuckLib_Utilities PUBLIC ${utilIncludes})
+target_link_libraries(DuckLib_Utilities PUBLIC ${utilLibraries})
 
 add_library(dl::util ALIAS DuckLib_Utilities)
 

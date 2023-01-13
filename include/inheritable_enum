@@ -9,21 +9,27 @@
 \
 			constexpr name() : value(typed{0}) {}\
 			constexpr name(typed value) : value(value) {}\
-			std::strong_ordering operator<=>(name o) { return value.value <=> o.value.value; }\
-			bool operator==(name o) { return (*this <=> o) == std::strong_ordering::equivalent; }\
-			bool operator!=(name o) { return (*this <=> o) != std::strong_ordering::equivalent; }
+			std::strong_ordering operator<=>(typed o) const { return value.value <=> o.value; }\
+			bool operator==(typed o) const { return (*this <=> o) == std::strong_ordering::equivalent; }\
+			bool operator!=(typed o) const { return (*this <=> o) != std::strong_ordering::equivalent; }\
+			std::strong_ordering operator<=>(name o) const { return value.value <=> o.value.value; }\
+			bool operator==(name o) const { return (*this <=> o) == std::strong_ordering::equivalent; }\
+			bool operator!=(name o) const { return (*this <=> o) != std::strong_ordering::equivalent; }
 #define ienum2(name, base) struct name : base {\
 			using typed = base::typed;\
 \
 			constexpr name() : base(typed{0}) {}\
 			constexpr name(typed value) : base(value) {}\
 			constexpr name(base b) : base(b.value) {}\
-			std::strong_ordering operator<=>(name o) { return value.value <=> o.value.value; }\
-			bool operator==(name o) { return (*this <=> o) == std::strong_ordering::equivalent; }\
-			bool operator!=(name o) { return (*this <=> o) != std::strong_ordering::equivalent; }\
-			std::strong_ordering operator<=>(base o) { return value.value <=> o.value.value; }\
-			bool operator==(base o) { return (*this <=> o) == std::strong_ordering::equivalent; }\
-			bool operator!=(base o) { return (*this <=> o) != std::strong_ordering::equivalent; }
+			std::strong_ordering operator<=>(typed o) const { return value.value <=> o.value; }\
+			bool operator==(typed o) const { return (*this <=> o) == std::strong_ordering::equivalent; }\
+			bool operator!=(typed o) const { return (*this <=> o) != std::strong_ordering::equivalent; }\
+			std::strong_ordering operator<=>(name o) const { return value.value <=> o.value.value; }\
+			bool operator==(name o) const { return (*this <=> o) == std::strong_ordering::equivalent; }\
+			bool operator!=(name o) const { return (*this <=> o) != std::strong_ordering::equivalent; }\
+			std::strong_ordering operator<=>(base o) const { return value.value <=> o.value.value; }\
+			bool operator==(base o) const { return (*this <=> o) == std::strong_ordering::equivalent; }\
+			bool operator!=(base o) const { return (*this <=> o) != std::strong_ordering::equivalent; }
 #define ienum(...) IENUM_GET_MACRO(__VA_ARGS__, ienum2, ienum1)(__VA_ARGS__)
 
 #endif // ___DUCKED_C_INHERITABLE_ENUM_HPP___
