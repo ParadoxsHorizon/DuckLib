@@ -63,7 +63,13 @@ namespace std::term {
 	inline ostream& operator <<(ostream& s, debug w) {
 		return s << fg::gray << bg::cyan << '[' << w.location.file_name() << ":" << w.location.line() << "] ";
 	}
-} // std::ios
+
+	struct Reset {};
+	constexpr static Reset reset{};
+	inline ostream& operator <<(ostream& s, Reset){
+		return s << bg::reset << fg::reset << style::reset;
+	}
+} // std::term
 
 // Debug stream (thin wrapper around ostream)
 namespace std {
