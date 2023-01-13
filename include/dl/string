@@ -1,6 +1,7 @@
 #ifndef ___DUCKED_C_STRING_HPP___
 #define ___DUCKED_C_STRING_HPP___
 #include <string>
+#include <valarray>
 
 #include "endian"
 #include "dl/concepts"
@@ -14,27 +15,31 @@ namespace std {
 }
 
 namespace dl {
-	// Class representing a slice of an array (or string)
-	class slice: public std::pair<ptrdiff_t, ptrdiff_t> {
-		using P = std::pair<ptrdiff_t, ptrdiff_t>;
-	public:
-		using P::P; 
-		using P::operator=;
-		explicit slice(ptrdiff_t begin = 0, ptrdiff_t end = -1, bool marker = true) : P(begin, end) {}
+	struct slice: public std::slice {
+		slice(ptrdiff_t start = 0, ptrdiff_t end = -1) : std::slice(reference_cast<size_t>(start), reference_cast<size_t>(end), 1) {}
 
 		// Normalizes a slice to only have positive numbers (converts negative values to the equivalents in terms of a container's size)
-		slice apply_size(size_t size) {
-			slice ret = *this;
-			if(first < 0) ret.first += size;
-			if(second < 0) ret.second += size + 1;
-			return ret;
+		std::slice apply_size(size_t size) const {
+			if(stride() != 1) throw std::invalid_argument("DuckLib types currently only support slices with a stride of 1!");
+
+			auto _start = std::slice::start();
+			auto start = reference_cast<ptrdiff_t>(_start);
+			if(start < 0) start += size;
+
+			auto _end = std::slice::size();
+			auto end = reference_cast<ptrdiff_t>(_end);
+			if(end < 0) end += size;
+			return std::slice(start, end - start, 1);
 		}
+
+		static inline slice size(ptrdiff_t start, size_t length) { return slice(start, start + length); }
+		static inline slice size(size_t length) { return slice(0, length); }
 	};
 
 	struct slice_inclusive: public slice {
 		// using slice::slice;
 		using slice::operator=;
-		explicit slice_inclusive(ptrdiff_t begin = 0, ptrdiff_t end = -2) : slice(begin, end + 1, true) {}
+		explicit slice_inclusive(ptrdiff_t begin = 0, ptrdiff_t end = -2) : slice(begin, end + 1) {}
 	};
 
 
@@ -511,9 +516,12 @@ namespace dl {
 		inline operator const std::string_view() const { return *this; }
 
 		using Base::operator[];
+		constexpr inline basic_string_view operator[](std::slice s) { 
+			if(s.stride() != 1) throw std::invalid_argument("DuckLib types currently only support slices with a stride of 1!");
+			return {this->data() + s.start(), s.size()};
+		}
 		constexpr inline basic_string_view operator[](dl::slice s) { 
-			s = s.apply_size(this->size());
-			return {this->data() + s.first, s.second - s.first};
+			return this->operator[](s.apply_size(this->size()));
 		}
 
 		constexpr basic_string_view trim(const CharType* delims = " \t\v\f\r\n") const {
@@ -605,9 +613,12 @@ namespace dl {
 		constexpr basic_string(const std::basic_string_view<CharType, Traits>&& base) : Base(base) {}
 
 		using Base::operator[];
+		constexpr inline view operator[](std::slice s) { 
+			if(s.stride() != 1) throw std::invalid_argument("DuckLib types currently only support slices with a stride of 1!");
+			return {Base::data() + s.start(), s.size()};
+		}
 		constexpr inline view operator[](dl::slice s) { 
-			s = s.apply_size(this->size());
-			return {Base::data() + s.first, size_t{s.second - s.first}};
+			return this->operator[](s.apply_size(this->size()));
 		}
 
 		// Gets a String View of this string

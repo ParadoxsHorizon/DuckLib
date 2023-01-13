@@ -110,7 +110,7 @@ TEST_CASE("String Properties") {
 	CHECK( s.back(std::utf8) == "B" );
 
 	s = "Hello World";
-	CHECK( s[std::slice(0, 4)] == "Hell"sv);
+	CHECK( s[slice(0, 4)] == "Hell"sv);
 	CHECK( s.caseless_equal("hello world") == true );
 	CHECK( s.toupper(std::utf8) == "HELLO WORLD" );
 
@@ -148,12 +148,12 @@ TEST_CASE( "Array" ) {
 	for(int i = 0; i < 6; i++)
 		CHECK( add[i] == i + 1 );
 
-	auto sub = add[std::slice(2, 4)];
+	auto sub = add[slice(2, 4)];
 	CHECK( sub.size() == 2 );
 	CHECK( sub.front() == 3 );
 	CHECK( sub.back() == 4 );
 
-	auto inclusiveSub = add[std::slice_inclusive(2, 4)];
+	auto inclusiveSub = add[slice_inclusive(2, 4)];
 	CHECK( inclusiveSub.size() == 3 );
 	CHECK( inclusiveSub.front() == 3 );
 	CHECK( inclusiveSub.back() == 5 );
@@ -174,12 +174,12 @@ TEST_CASE( "Dynarray" ) {
 	for(int i = 0; i < 6; i++)
 		CHECK( add[i] == i + 1 );
 
-	auto sub = add[std::slice(2, 4)];
+	auto sub = add[slice(2, 4)];
 	CHECK( sub.size() == 2 );
 	CHECK( sub.front() == 3 );
 	CHECK( sub.back() == 4 );
 
-	auto inclusiveSub = add[std::slice_inclusive(2, 4)];
+	auto inclusiveSub = add[slice_inclusive(2, 4)];
 	CHECK( inclusiveSub.size() == 3 );
 	CHECK( inclusiveSub.front() == 3 );
 	CHECK( inclusiveSub.back() == 5 );

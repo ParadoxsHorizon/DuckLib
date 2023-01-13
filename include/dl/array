@@ -17,9 +17,11 @@ namespace dl {
 		using legacy::legacy;
 
 		using legacy::operator[];
-		slice operator[](dl::slice s) { 
-			s = s.apply_size(legacy::size());
-			return {legacy::data() + s.first, s.second - s.first};
+		constexpr inline slice operator[](std::slice s) { 
+			return {legacy::data() + s.start(), s.size()};
+		}
+		constexpr inline slice operator[](dl::slice s) { 
+			return this->operator[](s.apply_size(this->size()));
 		}
 
 	
@@ -58,16 +60,20 @@ namespace dl {
 
 		using legacy::operator[];
 		using legacy::at;
-		slice operator[](dl::slice s) { 
-			s = s.apply_size(legacy::size());
-			return {legacy::data() + s.first, size_t{s.second - s.first}};
+		constexpr inline slice operator[](std::slice s) { 
+			if(s.stride() != 1) throw std::invalid_argument("DuckLib types currently only support slices with a stride of 1!");
+			return {legacy::data() + s.start(), s.size()};
 		}
-		inline slice at(dl::slice s) { 
-			auto sNorm = s.apply_size(legacy::size());
-			if(sNorm.first > legacy::size() || sNorm.second > legacy::size() 
-				|| sNorm.first < 0 || sNorm.second < 0) throw std::out_of_range(); // TODO: Add message...
-			return legacy::operator[](sNorm);
+		constexpr inline slice operator[](dl::slice s) { 
+			return this->operator[](s.apply_size(this->size()));
 		}
+		inline slice at(std::slice s) { 
+			if(s.stride() != 1) throw std::invalid_argument("DuckLib types currently only support slices with a stride of 1!");
+			if(s.start() > legacy::size() || s.start() + s.size() > legacy::size()) 
+				throw std::out_of_range(); // TODO: Add message...
+			return this->operator[](s);
+		}
+		inline slice at(dl::slice s) { return at(s.apply_size(this->size)); }
 
 		template<size_t oSize>
 		array<T, size + oSize> operator+(array<T, oSize>& o) {
@@ -154,16 +160,21 @@ namespace dl {
 		using slice = span<T, std::dynamic_extent>;
 
 		using legacy::operator[];
-		slice operator[](dl::slice s) { 
-			s = s.apply_size(legacy::size());
-			return {legacy::data() + s.first, size_t{s.second - s.first}};
+		using legacy::at;
+		constexpr inline slice operator[](std::slice s) { 
+			if(s.stride() != 1) throw std::invalid_argument("DuckLib types currently only support slices with a stride of 1!");
+			return {legacy::data() + s.start(), s.size()};
 		}
-		slice at(dl::slice s) {
-			auto sNorm = s.apply_size(legacy::size());
-			if(sNorm.first > legacy::size() || sNorm.second > legacy::size() 
-				|| sNorm.first < 0 || sNorm.second < 0) throw std::out_of_range(); // TODO: Add message...
-			return legacy::operator[](sNorm);
+		constexpr inline slice operator[](dl::slice s) { 
+			return this->operator[](s.apply_size(this->size()));
 		}
+		inline slice at(std::slice s) { 
+			if(s.stride() != 1) throw std::invalid_argument("DuckLib types currently only support slices with a stride of 1!");
+			if(s.start() > legacy::size() || s.start() + s.size() > legacy::size()) 
+				throw std::out_of_range(); // TODO: Add message...
+			return this->operator[](s);
+		}
+		inline slice at(dl::slice s) { return at(s.apply_size(this->size)); }
 
 		vector operator+(vector& o) {
 			vector ret;
@@ -265,18 +276,22 @@ namespace std {
 
 			return Base::operator[](index);
 		}
-		constexpr T& at(dl::slice s) {
-			s = s.apply_size(Base::size());
-			if(s.second > Base::size() || Base::empty())
-				Base::resize(s.second + 1);
-
-			return Base::operator[](s);
+		inline slice at(std::slice s) { 
+			if(s.stride() != 1) throw std::invalid_argument("DuckLib types currently only support slices with a stride of 1!");
+			if(s.start() > Base::size() || s.start() + s.size() > Base::size()) 
+				throw Base::resize(s.start() + s.size() + 1);
+			return this->operator[](s);
 		}
+		inline slice at(dl::slice s) { return at(s.apply_size(this->size)); }
+
 		// The const version will invoke an error if trying to access an element outside of the reserved array
 		constexpr const T& at(size_t index) const {
 			return Base::at(index);
 		}
-		constexpr const T& at(dl::slice slice) const {
+		constexpr const slice at(dl::slice slice) const {
+			return Base::at(slice);
+		}
+		constexpr const slice at(std::slice slice) const {
 			return Base::at(slice);
 		}
 

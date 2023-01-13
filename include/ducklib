@@ -29,9 +29,12 @@ void __DUCKLIB_INIT__(){
 }
 
 namespace dl::builtin {
+	using slice = dl::slice;
+	using slice_inclusive = dl::slice_inclusive;
+
 	// String is now a "builtin" type
-	typedef dl::string string;
-	typedef dl::basic_string<unsigned char> ustring;
+	using string = dl::string;
+	using ustring = dl::basic_string<unsigned char>;
 	// Arrays are "builtin" types
 	template<typename T, size_t size> struct array: public dl::array<T, size> { using dl::array<T, size>::array; };
 	template<class T, class Allocator = std::allocator<T>> struct dynarray: std::dynamic_array<T, Allocator> { using std::dynamic_array<T, Allocator>::dynamic_array; };
@@ -182,10 +185,6 @@ namespace dl::builtin {
 }
 
 namespace std {
-	// Drag slicing into std
-	using dl::slice;
-	using dl::slice_inclusive;
-
 	// Import functions for optional and expected
 	using namespace tl;
 
