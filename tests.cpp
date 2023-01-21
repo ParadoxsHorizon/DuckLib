@@ -77,7 +77,7 @@ TEST_CASE("Extended size types") {
 	// std::cout << sizeof(iarb) << std::endl;
 }
 
-TEST_CASE("String Properties") {
+TEST_CASE("String Extensions") {
 	// Fails due to minor inprecision
 	string n = "127.889";
 	CAPTURE_CONSOLE
@@ -139,6 +139,10 @@ TEST_CASE("String Properties") {
 	string::view sv = "こんにちは世界"sv;
 	auto u8iter = sv.begin(std::utf8);
 	CHECK( string::view(*(++u8iter)) == "ん"sv );
+
+	dynarray<string> values = {"this", "is", "a", "comma", "seperated", "list"};
+	s = ", "s.join(values);
+	CHECK( s == "this, is, a, comma, seperated, list");
 }
 
 TEST_CASE( "Array" ) {

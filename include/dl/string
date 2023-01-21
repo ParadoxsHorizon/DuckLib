@@ -635,7 +635,7 @@ namespace dl {
 		constexpr inline operator view() const { return substr_view(); }
 
 		// Support appending a string_view or const char* to a string
-		constexpr inline basic_string operator+(const std::basic_string_view<CharType, Traits> other) const { auto out = *this; out.append(other.data(), other.size()); return out; }
+		// constexpr inline basic_string operator+(const std::basic_string_view<CharType, Traits> other) const { auto out = *this; out.append(other.data(), other.size()); return out; }
 		constexpr inline basic_string& operator+=(const std::basic_string_view<CharType, Traits> other) { Base::append(other.data(), other.size()); return *this; }
 
 		// Support appending a single char to the string
@@ -903,6 +903,23 @@ namespace dl {
 			for(basic_string& str: splits) out += str.right(std::modify_original, width, fill) + '\n';
 			return out;
 		}
+
+
+#define DUCKED_C_STRING_JOIN_IMPL if(strings.size() == 0) return "";\
+\
+			auto i = strings.begin();\
+			basic_string out = *i;\
+			++i;\
+\
+			for(; i != strings.end(); ++i)\
+				out += *this + *i;\
+			return out;
+
+		constexpr basic_string join(std::span<std::string_view> strings) const { DUCKED_C_STRING_JOIN_IMPL }
+		constexpr basic_string join(std::span<std::string> strings) const { DUCKED_C_STRING_JOIN_IMPL }
+		constexpr basic_string join(std::span<basic_string> strings) const { DUCKED_C_STRING_JOIN_IMPL }
+		constexpr basic_string join(std::span<view> strings) const { DUCKED_C_STRING_JOIN_IMPL }
+#undef DUCKED_C_STRING_JOIN_IMPL
 
 
 		// -- UTF-8/32 --
