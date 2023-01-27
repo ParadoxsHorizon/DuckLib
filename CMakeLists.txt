@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(DuckLib LANGUAGES CXX)
 
 #Force colors in Ninja
@@ -26,7 +26,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/nanobench")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/utfcpp")
 
 set(CXX_STANDARD 23 REQUIRED)
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-literal-suffix -Wno-narrowing -std=c++23")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-literal-suffix -Wno-narrowing")
 set(DUCKLIB_CORE_FOUND true)
 
 # add_compile_options (-flto -Wall -Wextra)
